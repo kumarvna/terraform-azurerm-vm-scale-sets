@@ -8,9 +8,9 @@ This module deploys Windows or Linux virtual machine scale sets with Public / Pr
 
 ### Linux Virtual Machines Scale Sets
 
-Following example to create Linux virtual machine scale sets with load balancer and auto scaling features.
+Following example creates Linux virtual machine scale sets with load balancer and auto scaling features.
 
-```hcl
+```hcl2
 module "vmscaleset" {
   source  = "kumarvna/vm-scale-sets/azurerm"
   version = "1.0.0"
@@ -88,9 +88,9 @@ module "vmscaleset" {
 
 ### Windows Virtual Machines Scale Sets
 
-Following example to create Windows virtual machine scale sets with load balancer and auto scaling features.
+Following example creates Windows virtual machine scale sets with load balancer and auto scaling features.
 
-```hcl
+```hcl2
 module "vmscaleset" {
   source  = "kumarvna/vm-scale-sets/azurerm"
   version = "1.0.0"
