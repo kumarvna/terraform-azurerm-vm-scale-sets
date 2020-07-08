@@ -90,7 +90,7 @@ module "vmscaleset" {
 
 Following example creates Windows virtual machine scale sets with load balancer and auto scaling features.
 
-```perl
+```yml
 module "vmscaleset" {
   source  = "kumarvna/vm-scale-sets/azurerm"
   version = "1.0.0"
