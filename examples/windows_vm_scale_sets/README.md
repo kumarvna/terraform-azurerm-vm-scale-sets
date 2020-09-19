@@ -7,13 +7,14 @@ This module deploys Windows or Linux virtual machine scale sets with Public / Pr
 ```hcl
 module "vmscaleset" {
   source  = "kumarvna/vm-scale-sets/azurerm"
-  version = "1.0.0"
+  version = "2.0.0"
 
   # Resource Group and location, VNet and Subnet detials (Required)
-  resource_group_name  = "rg-hub-demo-internal-shared-westeurope-001"
-  virtual_network_name = "vnet-default-hub-westeurope"
-  subnet_name          = "snet-management-default-hub-westeurope"
+  resource_group_name  = "rg-demo-westeurope-01" #"rg-hub-demo-internal-shared-westeurope-001"
+  virtual_network_name = "vnet-demo-westeurope-001"
+  subnet_name          = "appgateway"
   vmscaleset_name      = "testvmss"
+  vm_computer_name     = "webserv1"
 
   # (Optional) To enable Azure Monitoring and install log analytics agents
   log_analytics_workspace_name = var.log_analytics_workspace_id

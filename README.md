@@ -20,7 +20,7 @@ These types of resources supported:
 ```hcl
 module "vmscaleset" {
   source  = "kumarvna/vm-scale-sets/azurerm"
-  version = "1.0.0"
+  version = "2.0.0"
 
   # Resource Group and location, VNet and Subnet detials (Required)
   resource_group_name  = "rg-hub-demo-internal-shared-westeurope-001"
@@ -119,7 +119,7 @@ If the pre-defined Windows or Linux variants are not sufficient then, you can sp
 ```hcl
 module "vmscaleset" {
   source  = "kumarvna/vm-scale-sets/azurerm"
-  version = "1.0.0"
+  version = "2.0.0"
 
   # .... omitted
 
@@ -232,7 +232,7 @@ In the Source and Destination columns, `VirtualNetwork`, `AzureLoadBalancer`, an
 ```hcl
 module "vmscaleset" {
   source  = "kumarvna/vm-scale-sets/azurerm"
-  version = "1.0.0"
+  version = "2.0.0"
 
   # .... omitted
   
@@ -292,7 +292,7 @@ End Date of the Project|Date when this application, workload, or service is plan
 ```hcl
 module "vmscaleset" {
   source  = "kumarvna/vm-scale-sets/azurerm"
-  version = "1.0.0"
+  version = "2.0.0"
 
   # Resource Group, location, VNet and Subnet details
   resource_group_name  = "rg-hub-tieto-internal-shared-westeurope-001"
@@ -308,6 +308,21 @@ module "vmscaleset" {
   }
 }
 ```
+
+## Requirements
+
+Name | Version
+-----|--------
+terraform | >= 0.13
+azurerm | ~> 2.27.0
+
+## Providers
+
+| Name | Version |
+|------|---------|
+azurerm | 2.27.0
+random | n/a
+tls | n/a
 
 ## Inputs
 
@@ -389,7 +404,7 @@ Name | Description | Type | Default
 
 ## Authors
 
-Module is maintained by [Kumaraswamy Vithanala](mailto:kumarvna@gmail.com) with the help from other awesome contributors.
+Originally created by [Kumaraswamy Vithanala](mailto:kumarvna@gmail.com)
 
 ## Other resources
 
