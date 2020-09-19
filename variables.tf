@@ -18,6 +18,11 @@ variable "vmscaleset_name" {
   default     = ""
 }
 
+variable "vm_computer_name" {
+  description = "Specifies the name of the virtual machine inside the VM scale set"
+  default     = ""
+}
+
 variable "log_analytics_workspace_name" {
   description = "The name of log analytics workspace name"
   default     = null
