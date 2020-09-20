@@ -7,12 +7,12 @@ module "vmscaleset" {
   virtual_network_name = "vnet-demo-westeurope-001"
   subnet_name          = "appgateway"
   vmscaleset_name      = "testvmss"
-  vm_computer_name     = "webserv1"
+  vm_computer_name     = "websrv1"
 
-  /* # (Optional) To enable Azure Monitoring and install log analytics agents
+  # (Optional) To enable Azure Monitoring and install log analytics agents
   log_analytics_workspace_name = var.log_analytics_workspace_id
   hub_storage_account_name     = var.hub_storage_account_id
-*/
+
   # This module support multiple Pre-Defined Linux and Windows Distributions.
   # These distributions support the Automatic OS image upgrades in virtual machine scale sets
   # Linux images: ubuntu1804, ubuntu1604, centos75, coreos
