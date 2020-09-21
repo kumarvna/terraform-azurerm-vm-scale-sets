@@ -30,7 +30,7 @@ module "vmscaleset" {
   windows_distribution_name = "windows2019dc"
   instances_count           = 2
   admin_username            = "azureadmin"
-  admin_password            = "complex_password"
+  admin_password            = "P@$$w0rd1234!"
 
   # Public and private load balancer support for VM scale sets
   # Specify health probe port to allow LB to detect the backend endpoint status
