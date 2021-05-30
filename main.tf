@@ -276,26 +276,27 @@ resource "azurerm_linux_virtual_machine_scale_set" "linux_vmss" {
 # Windows Virutal machine scale set
 #---------------------------------------
 resource "azurerm_windows_virtual_machine_scale_set" "winsrv_vmss" {
-  count                  = var.os_flavor == "windows" ? 1 : 0
-  name                   = format("%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")))
-  computer_name_prefix   = format("%s%s", lower(replace(var.vm_computer_name, "/[[:^alnum:]]/", "")), count.index + 1)
-  resource_group_name    = data.azurerm_resource_group.rg.name
-  location               = data.azurerm_resource_group.rg.location
-  overprovision          = var.overprovision
-  sku                    = var.virtual_machine_size
-  instances              = var.instances_count
-  zones                  = var.availability_zones
-  zone_balance           = var.availability_zone_balance
-  single_placement_group = var.single_placement_group
-  admin_username         = var.admin_username
-  admin_password         = var.admin_password == null ? random_password.passwd[count.index].result : var.admin_password
-  tags                   = merge({ "ResourceName" = format("%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", ""))) }, var.tags, )
-  source_image_id        = var.source_image_id != null ? var.source_image_id : null
-  upgrade_mode           = var.os_upgrade_mode
-  health_probe_id        = var.enable_load_balancer ? azurerm_lb_probe.lbp[0].id : null
-  provision_vm_agent     = true
-  license_type           = var.license_type
-  timezone               = var.vm_time_zone
+  count                    = var.os_flavor == "windows" ? 1 : 0
+  name                     = format("%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")))
+  computer_name_prefix     = format("%s%s", lower(replace(var.vm_computer_name, "/[[:^alnum:]]/", "")), count.index + 1)
+  resource_group_name      = data.azurerm_resource_group.rg.name
+  location                 = data.azurerm_resource_group.rg.location
+  overprovision            = var.overprovision
+  sku                      = var.virtual_machine_size
+  instances                = var.instances_count
+  zones                    = var.availability_zones
+  zone_balance             = var.availability_zone_balance
+  single_placement_group   = var.single_placement_group
+  admin_username           = var.admin_username
+  admin_password           = var.admin_password == null ? random_password.passwd[count.index].result : var.admin_password
+  tags                     = merge({ "ResourceName" = format("%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", ""))) }, var.tags, )
+  source_image_id          = var.source_image_id != null ? var.source_image_id : null
+  upgrade_mode             = var.os_upgrade_mode
+  health_probe_id          = var.enable_load_balancer ? azurerm_lb_probe.lbp[0].id : null
+  provision_vm_agent       = true
+  enable_automatic_updates = true
+  license_type             = var.license_type
+  timezone                 = var.vm_time_zone
 
   dynamic "source_image_reference" {
     for_each = var.source_image_id != null ? [] : [1]
