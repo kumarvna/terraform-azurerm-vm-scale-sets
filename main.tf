@@ -99,10 +99,9 @@ resource "azurerm_lb" "vmsslb" {
 # Backend address pool for Load Balancer
 #---------------------------------------
 resource "azurerm_lb_backend_address_pool" "bepool" {
-  count               = var.enable_load_balancer ? 1 : 0
-  name                = lower("lbe-backend-pool-${var.vmscaleset_name}")
-  resource_group_name = data.azurerm_resource_group.rg.name
-  loadbalancer_id     = azurerm_lb.vmsslb[count.index].id
+  count           = var.enable_load_balancer ? 1 : 0
+  name            = lower("lbe-backend-pool-${var.vmscaleset_name}")
+  loadbalancer_id = azurerm_lb.vmsslb[count.index].id
 }
 
 #---------------------------------------
