@@ -367,6 +367,11 @@ variable "pip_diag_logs" {
   default     = ["DDoSProtectionNotifications", "DDoSMitigationFlowLogs", "DDoSMitigationReports"]
 }
 
+variable "lb_diag_logs" {
+  description = "Load balancer Category details for Azure Diagnostic setting"
+  default     = ["LoadBalancerAlertEvent"]
+}
+
 variable "intall_iis_server_on_instances" {
   description = "Install ISS server on every Instance in the VM scale set"
   default     = false
