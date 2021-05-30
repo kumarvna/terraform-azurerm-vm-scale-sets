@@ -1,4 +1,4 @@
-variable "hub_storage_account_name" {
+variable "storage_account_name" {
   description = "The id of hub storage id for logs storage"
   default     = null
 }
