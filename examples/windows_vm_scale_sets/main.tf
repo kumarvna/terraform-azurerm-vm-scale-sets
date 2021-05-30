@@ -49,6 +49,9 @@ module "vmscaleset" {
   scale_out_cpu_percentage_threshold = 80
   scale_in_cpu_percentage_threshold  = 20
 
+  # Deploy IIS server minimal installation on VMMS instances
+  intall_iis_server_on_instances = true
+
   # Network Seurity group port allow definitions for each Virtual Machine
   # NSG association to be added automatically for all network interfaces.
   # SSH port 22 and 3389 is exposed to the Internet recommended for only testing. 
