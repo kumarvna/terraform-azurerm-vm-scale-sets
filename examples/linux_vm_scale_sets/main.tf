@@ -13,6 +13,10 @@ module "vmscaleset" {
   log_analytics_workspace_name = "loganalytics-we-sharedtest2" #var.log_analytics_workspace_name
   hub_storage_account_name     = "stdiagfortesting"            #var.hub_storage_account_name
 
+  # Deploy log analytics agents to virtual machine. Log analytics workspace name required.
+  # Defaults to `false` 
+  deploy_log_analytics_agent = true
+
   # This module support multiple Pre-Defined Linux and Windows Distributions.
   # These distributions support the Automatic OS image upgrades in virtual machine scale sets
   # Linux images: ubuntu1804, ubuntu1604, centos75, coreos
