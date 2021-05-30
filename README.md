@@ -411,7 +411,7 @@ Name | Description | Type | Default
 
 ## Resource Graph
 
-![Resource Graph](graph.png)
+![Resource Graph](graph.svg)
 
 ## Authors
 
