@@ -10,8 +10,8 @@ module "vmscaleset" {
   vmscaleset_name      = "testvmss"
 
   # (Optional) To enable Azure Monitoring and install log analytics agents
-  log_analytics_workspace_name = var.log_analytics_workspace_id
-  hub_storage_account_name     = var.hub_storage_account_id
+  log_analytics_workspace_name = var.log_analytics_workspace_name
+  hub_storage_account_name     = var.hub_storage_account_name
 
   # This module support multiple Pre-Defined Linux and Windows Distributions.
   # These distributions support the Automatic OS image upgrades in virtual machine scale sets
