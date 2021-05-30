@@ -17,6 +17,7 @@ output "windows_vm_password" {
 
 output "linux_vm_password" {
   description = "Password for the Linux VM"
+  sensitive   = true
   value       = module.vmscaleset.linux_vm_password
 }
 
