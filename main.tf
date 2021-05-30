@@ -47,9 +47,10 @@ data "azurerm_storage_account" "storeacc" {
   name                = var.hub_storage_account_name
   resource_group_name = data.azurerm_resource_group.rg.name
 }
+
 resource "random_password" "passwd" {
   count       = var.disable_password_authentication != true || var.os_flavor == "windows" && var.admin_password == null ? 1 : 0
-  length      = 24
+  length      = var.random_password_length
   min_upper   = 4
   min_lower   = 2
   min_numeric = 4
@@ -68,8 +69,8 @@ resource "azurerm_public_ip" "pip" {
   name                = lower("pip-vm-${var.vmscaleset_name}-${data.azurerm_resource_group.rg.location}-0${count.index + 1}")
   location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
-  allocation_method   = "Static"
-  sku                 = "Standard"
+  allocation_method   = var.public_ip_allocation_method
+  sku                 = var.public_ip_sku
   domain_name_label   = format("vm%spip0${count.index + 1}", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")))
   tags                = merge({ "ResourceName" = lower("pip-vm-${var.vmscaleset_name}-${data.azurerm_resource_group.rg.location}-0${count.index + 1}") }, var.tags, )
 }
@@ -295,6 +296,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "winsrv_vmss" {
   health_probe_id        = var.enable_load_balancer ? azurerm_lb_probe.lbp[0].id : null
   provision_vm_agent     = true
   license_type           = var.license_type
+  timezone               = var.vm_time_zone
 
   dynamic "source_image_reference" {
     for_each = var.source_image_id != null ? [] : [1]
@@ -429,7 +431,7 @@ resource "azurerm_monitor_autoscale_setting" "auto" {
 # Azure Log Analytics Workspace Agent Installation for windows
 #--------------------------------------------------------------
 resource "azurerm_virtual_machine_scale_set_extension" "omsagentwin" {
-  count                        = var.log_analytics_workspace_name != null && var.os_flavor == "windows" ? 1 : 0
+  count                        = var.deploy_log_analytics_agent && var.log_analytics_workspace_name != null && var.os_flavor == "windows" ? 1 : 0
   name                         = "OmsAgentForWindows"
   publisher                    = "Microsoft.EnterpriseCloud.Monitoring"
   type                         = "MicrosoftMonitoringAgent"
@@ -454,7 +456,7 @@ resource "azurerm_virtual_machine_scale_set_extension" "omsagentwin" {
 # Azure Log Analytics Workspace Agent Installation for Linux
 #--------------------------------------------------------------
 resource "azurerm_virtual_machine_scale_set_extension" "omsagentlinux" {
-  count                        = var.log_analytics_workspace_name != null && var.os_flavor == "linux" ? 1 : 0
+  count                        = var.deploy_log_analytics_agent && var.log_analytics_workspace_name != null && var.os_flavor == "linux" ? 1 : 0
   name                         = "OmsAgentForLinux"
   publisher                    = "Microsoft.EnterpriseCloud.Monitoring"
   type                         = "OmsAgentForLinux"
@@ -523,6 +525,34 @@ resource "azurerm_monitor_diagnostic_setting" "lb-pip" {
 
   dynamic "log" {
     for_each = var.pip_diag_logs
+    content {
+      category = log.value
+      enabled  = true
+
+      retention_policy {
+        enabled = false
+      }
+    }
+  }
+
+  metric {
+    category = "AllMetrics"
+
+    retention_policy {
+      enabled = false
+    }
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "lb" {
+  count                      = var.load_balancer_type == "public" && var.log_analytics_workspace_name != null && var.hub_storage_account_name != null ? 1 : 0
+  name                       = "${var.vmscaleset_name}-lb-diag"
+  target_resource_id         = azurerm_lb.vmsslb.0.id
+  storage_account_id         = data.azurerm_storage_account.storeacc.0.id
+  log_analytics_workspace_id = data.azurerm_log_analytics_workspace.logws.0.id
+
+  dynamic "log" {
+    for_each = var.lb_diag_logs
     content {
       category = log.value
       enabled  = true
