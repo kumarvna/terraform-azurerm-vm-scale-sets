@@ -5,16 +5,13 @@ output "admin_ssh_key_public" {
 
 output "admin_ssh_key_private" {
   description = "The generated private key data in PEM format"
+  sensitive   = true
   value       = module.vmscaleset.admin_ssh_key_private
-}
-
-output "windows_vm_password" {
-  description = "Password for the windows VM"
-  value       = module.vmscaleset.windows_vm_password
 }
 
 output "linux_vm_password" {
   description = "Password for the Linux VM"
+  sensitive   = true
   value       = module.vmscaleset.linux_vm_password
 }
 
@@ -58,18 +55,4 @@ output "linux_virtual_machine_scale_set_unique_id" {
   value       = module.vmscaleset.linux_virtual_machine_scale_set_unique_id
 }
 
-output "windows_virtual_machine_scale_set_name" {
-  description = "The name of the windows Virtual Machine Scale Set."
-  value       = module.vmscaleset.windows_virtual_machine_scale_set_name
-}
-
-output "windows_virtual_machine_scale_set_id" {
-  description = "The resource ID of the windows Virtual Machine Scale Set."
-  value       = module.vmscaleset.windows_virtual_machine_scale_set_id
-}
-
-output "windows_virtual_machine_scale_set_unique_id" {
-  description = "The unique ID of the windows Virtual Machine Scale Set."
-  value       = module.vmscaleset.windows_virtual_machine_scale_set_unique_id
-}
 

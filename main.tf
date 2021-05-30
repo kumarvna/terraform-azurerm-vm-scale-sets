@@ -43,13 +43,14 @@ data "azurerm_log_analytics_workspace" "logws" {
 }
 
 data "azurerm_storage_account" "storeacc" {
-  count               = var.hub_storage_account_name != null ? 1 : 0
-  name                = var.hub_storage_account_name
+  count               = var.storage_account_name != null ? 1 : 0
+  name                = var.storage_account_name
   resource_group_name = data.azurerm_resource_group.rg.name
 }
+
 resource "random_password" "passwd" {
   count       = var.disable_password_authentication != true || var.os_flavor == "windows" && var.admin_password == null ? 1 : 0
-  length      = 24
+  length      = var.random_password_length
   min_upper   = 4
   min_lower   = 2
   min_numeric = 4
@@ -68,8 +69,8 @@ resource "azurerm_public_ip" "pip" {
   name                = lower("pip-vm-${var.vmscaleset_name}-${data.azurerm_resource_group.rg.location}-0${count.index + 1}")
   location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
-  allocation_method   = "Static"
-  sku                 = "Standard"
+  allocation_method   = var.public_ip_allocation_method
+  sku                 = var.public_ip_sku
   domain_name_label   = format("vm%spip0${count.index + 1}", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")))
   tags                = merge({ "ResourceName" = lower("pip-vm-${var.vmscaleset_name}-${data.azurerm_resource_group.rg.location}-0${count.index + 1}") }, var.tags, )
 }
@@ -98,10 +99,9 @@ resource "azurerm_lb" "vmsslb" {
 # Backend address pool for Load Balancer
 #---------------------------------------
 resource "azurerm_lb_backend_address_pool" "bepool" {
-  count               = var.enable_load_balancer ? 1 : 0
-  name                = lower("lbe-backend-pool-${var.vmscaleset_name}")
-  resource_group_name = data.azurerm_resource_group.rg.name
-  loadbalancer_id     = azurerm_lb.vmsslb[count.index].id
+  count           = var.enable_load_balancer ? 1 : 0
+  name            = lower("lbe-backend-pool-${var.vmscaleset_name}")
+  loadbalancer_id = azurerm_lb.vmsslb[count.index].id
 }
 
 #---------------------------------------
@@ -276,25 +276,27 @@ resource "azurerm_linux_virtual_machine_scale_set" "linux_vmss" {
 # Windows Virutal machine scale set
 #---------------------------------------
 resource "azurerm_windows_virtual_machine_scale_set" "winsrv_vmss" {
-  count                  = var.os_flavor == "windows" ? 1 : 0
-  name                   = format("%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")))
-  computer_name_prefix   = format("%s%s", lower(replace(var.vm_computer_name, "/[[:^alnum:]]/", "")), count.index + 1)
-  resource_group_name    = data.azurerm_resource_group.rg.name
-  location               = data.azurerm_resource_group.rg.location
-  overprovision          = var.overprovision
-  sku                    = var.virtual_machine_size
-  instances              = var.instances_count
-  zones                  = var.availability_zones
-  zone_balance           = var.availability_zone_balance
-  single_placement_group = var.single_placement_group
-  admin_username         = var.admin_username
-  admin_password         = var.admin_password == null ? random_password.passwd[count.index].result : var.admin_password
-  tags                   = merge({ "ResourceName" = format("%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", ""))) }, var.tags, )
-  source_image_id        = var.source_image_id != null ? var.source_image_id : null
-  upgrade_mode           = var.os_upgrade_mode
-  health_probe_id        = var.enable_load_balancer ? azurerm_lb_probe.lbp[0].id : null
-  provision_vm_agent     = true
-  license_type           = var.license_type
+  count                    = var.os_flavor == "windows" ? 1 : 0
+  name                     = format("%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")))
+  computer_name_prefix     = format("%s%s", lower(replace(var.vm_computer_name, "/[[:^alnum:]]/", "")), count.index + 1)
+  resource_group_name      = data.azurerm_resource_group.rg.name
+  location                 = data.azurerm_resource_group.rg.location
+  overprovision            = var.overprovision
+  sku                      = var.virtual_machine_size
+  instances                = var.instances_count
+  zones                    = var.availability_zones
+  zone_balance             = var.availability_zone_balance
+  single_placement_group   = var.single_placement_group
+  admin_username           = var.admin_username
+  admin_password           = var.admin_password == null ? random_password.passwd[count.index].result : var.admin_password
+  tags                     = merge({ "ResourceName" = format("%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", ""))) }, var.tags, )
+  source_image_id          = var.source_image_id != null ? var.source_image_id : null
+  upgrade_mode             = var.os_upgrade_mode
+  health_probe_id          = var.enable_load_balancer ? azurerm_lb_probe.lbp[0].id : null
+  provision_vm_agent       = true
+  enable_automatic_updates = false
+  license_type             = var.license_type
+  timezone                 = var.vm_time_zone
 
   dynamic "source_image_reference" {
     for_each = var.source_image_id != null ? [] : [1]
@@ -429,7 +431,7 @@ resource "azurerm_monitor_autoscale_setting" "auto" {
 # Azure Log Analytics Workspace Agent Installation for windows
 #--------------------------------------------------------------
 resource "azurerm_virtual_machine_scale_set_extension" "omsagentwin" {
-  count                        = var.log_analytics_workspace_name != null && var.os_flavor == "windows" ? 1 : 0
+  count                        = var.deploy_log_analytics_agent && var.log_analytics_workspace_name != null && var.os_flavor == "windows" ? 1 : 0
   name                         = "OmsAgentForWindows"
   publisher                    = "Microsoft.EnterpriseCloud.Monitoring"
   type                         = "MicrosoftMonitoringAgent"
@@ -454,7 +456,7 @@ resource "azurerm_virtual_machine_scale_set_extension" "omsagentwin" {
 # Azure Log Analytics Workspace Agent Installation for Linux
 #--------------------------------------------------------------
 resource "azurerm_virtual_machine_scale_set_extension" "omsagentlinux" {
-  count                        = var.log_analytics_workspace_name != null && var.os_flavor == "linux" ? 1 : 0
+  count                        = var.deploy_log_analytics_agent && var.log_analytics_workspace_name != null && var.os_flavor == "linux" ? 1 : 0
   name                         = "OmsAgentForLinux"
   publisher                    = "Microsoft.EnterpriseCloud.Monitoring"
   type                         = "OmsAgentForLinux"
@@ -479,7 +481,7 @@ resource "azurerm_virtual_machine_scale_set_extension" "omsagentlinux" {
 # azurerm monitoring diagnostics 
 #--------------------------------------
 resource "azurerm_monitor_diagnostic_setting" "vmmsdiag" {
-  count                      = var.log_analytics_workspace_name != null && var.hub_storage_account_name != null ? 1 : 0
+  count                      = var.log_analytics_workspace_name != null && var.storage_account_name != null ? 1 : 0
   name                       = lower("${var.vmscaleset_name}-diag")
   target_resource_id         = var.os_flavor == "windows" ? azurerm_windows_virtual_machine_scale_set.winsrv_vmss.0.id : azurerm_linux_virtual_machine_scale_set.linux_vmss.0.id
   storage_account_id         = data.azurerm_storage_account.storeacc.0.id
@@ -495,7 +497,7 @@ resource "azurerm_monitor_diagnostic_setting" "vmmsdiag" {
 }
 
 resource "azurerm_monitor_diagnostic_setting" "nsg" {
-  count                      = var.log_analytics_workspace_name != null && var.hub_storage_account_name != null ? 1 : 0
+  count                      = var.log_analytics_workspace_name != null && var.storage_account_name != null ? 1 : 0
   name                       = lower("nsg-${var.vmscaleset_name}-diag")
   target_resource_id         = azurerm_network_security_group.nsg.id
   storage_account_id         = data.azurerm_storage_account.storeacc.0.id
@@ -515,7 +517,7 @@ resource "azurerm_monitor_diagnostic_setting" "nsg" {
 }
 
 resource "azurerm_monitor_diagnostic_setting" "lb-pip" {
-  count                      = var.load_balancer_type == "public" && var.log_analytics_workspace_name != null && var.hub_storage_account_name != null ? 1 : 0
+  count                      = var.load_balancer_type == "public" && var.log_analytics_workspace_name != null && var.storage_account_name != null ? 1 : 0
   name                       = "${var.vmscaleset_name}-pip-diag"
   target_resource_id         = azurerm_public_ip.pip.0.id
   storage_account_id         = data.azurerm_storage_account.storeacc.0.id
@@ -523,6 +525,34 @@ resource "azurerm_monitor_diagnostic_setting" "lb-pip" {
 
   dynamic "log" {
     for_each = var.pip_diag_logs
+    content {
+      category = log.value
+      enabled  = true
+
+      retention_policy {
+        enabled = false
+      }
+    }
+  }
+
+  metric {
+    category = "AllMetrics"
+
+    retention_policy {
+      enabled = false
+    }
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "lb" {
+  count                      = var.load_balancer_type == "public" && var.log_analytics_workspace_name != null && var.storage_account_name != null ? 1 : 0
+  name                       = "${var.vmscaleset_name}-lb-diag"
+  target_resource_id         = azurerm_lb.vmsslb.0.id
+  storage_account_id         = data.azurerm_storage_account.storeacc.0.id
+  log_analytics_workspace_id = data.azurerm_log_analytics_workspace.logws.0.id
+
+  dynamic "log" {
+    for_each = var.lb_diag_logs
     content {
       category = log.value
       enabled  = true

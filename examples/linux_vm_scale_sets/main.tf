@@ -1,16 +1,20 @@
 module "vmscaleset" {
   source  = "kumarvna/vm-scale-sets/azurerm"
-  version = "2.0.0"
+  version = "2.1.0"
 
   # Resource Group and location, VNet and Subnet detials (Required)
-  resource_group_name  = "rg-hub-demo-internal-shared-westeurope-001"
-  virtual_network_name = "vnet-default-hub-westeurope"
-  subnet_name          = "snet-management-default-hub-westeurope"
+  resource_group_name  = "rg-shared-westeurope-01"
+  virtual_network_name = "vnet-shared-hub-westeurope-001"
+  subnet_name          = "snet-management"
   vmscaleset_name      = "testvmss"
 
   # (Optional) To enable Azure Monitoring and install log analytics agents
-  log_analytics_workspace_name = var.log_analytics_workspace_id
-  hub_storage_account_name     = var.hub_storage_account_id
+  log_analytics_workspace_name = var.log_analytics_workspace_name
+  hub_storage_account_name     = var.hub_storage_account_name
+
+  # Deploy log analytics agents to virtual machine. Log analytics workspace name required.
+  # Defaults to `false` 
+  deploy_log_analytics_agent = false
 
   # This module support multiple Pre-Defined Linux and Windows Distributions.
   # These distributions support the Automatic OS image upgrades in virtual machine scale sets

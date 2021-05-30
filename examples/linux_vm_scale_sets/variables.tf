@@ -1,9 +1,9 @@
-variable "hub_storage_account_id" {
+variable "hub_storage_account_name" {
   description = "The id of hub storage id for logs storage"
-  default     = ""
+  default     = null
 }
 
-variable "log_analytics_workspace_id" {
+variable "log_analytics_workspace_name" {
   description = "Specifies the id of the Log Analytics Workspace"
-  default     = ""
+  default     = null
 }

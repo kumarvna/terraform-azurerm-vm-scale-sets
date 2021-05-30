@@ -1,17 +1,21 @@
 module "vmscaleset" {
   source  = "kumarvna/vm-scale-sets/azurerm"
-  version = "2.0.0"
+  version = "2.1.0"
 
   # Resource Group and location, VNet and Subnet detials (Required)
-  resource_group_name  = "rg-demo-westeurope-01" #"rg-hub-demo-internal-shared-westeurope-001"
-  virtual_network_name = "vnet-demo-westeurope-001"
-  subnet_name          = "appgateway"
+  resource_group_name  = "rg-shared-westeurope-01"
+  virtual_network_name = "vnet-shared-hub-westeurope-001"
+  subnet_name          = "snet-appgateway"
   vmscaleset_name      = "testvmss"
   vm_computer_name     = "websrv1"
 
   # (Optional) To enable Azure Monitoring and install log analytics agents
-  log_analytics_workspace_name = var.log_analytics_workspace_id
-  hub_storage_account_name     = var.hub_storage_account_id
+  log_analytics_workspace_name = var.log_analytics_workspace_name
+  hub_storage_account_name     = var.hub_storage_account_name
+
+  # Deploy log analytics agents to virtual machine. Log analytics workspace name required.
+  # Defaults to `false` 
+  deploy_log_analytics_agent = false
 
   # This module support multiple Pre-Defined Linux and Windows Distributions.
   # These distributions support the Automatic OS image upgrades in virtual machine scale sets
@@ -43,6 +47,9 @@ module "vmscaleset" {
   maximum_instances_count            = 5
   scale_out_cpu_percentage_threshold = 80
   scale_in_cpu_percentage_threshold  = 20
+
+  # Deploy IIS server minimal installation on VMMS instances
+  intall_iis_server_on_instances = false
 
   # Network Seurity group port allow definitions for each Virtual Machine
   # NSG association to be added automatically for all network interfaces.

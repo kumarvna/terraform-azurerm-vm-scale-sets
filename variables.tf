@@ -28,9 +28,14 @@ variable "log_analytics_workspace_name" {
   default     = null
 }
 
-variable "hub_storage_account_name" {
+variable "storage_account_name" {
   description = "The name of the hub storage account to store logs"
   default     = null
+}
+
+variable "random_password_length" {
+  description = "The desired length of random password created by this module"
+  default     = 24
 }
 
 variable "load_balancer_sku" {
@@ -57,6 +62,16 @@ variable "nat_pool_frontend_ports" {
   description = "Optional override for default NAT ports"
   type        = list(number)
   default     = [50000, 50119]
+}
+
+variable "public_ip_allocation_method" {
+  description = "Defines the allocation method for this IP address. Possible values are `Static` or `Dynamic`"
+  default     = "Static"
+}
+
+variable "public_ip_sku" {
+  description = "The SKU of the Public IP. Accepted values are `Basic` and `Standard`"
+  default     = "Standard"
 }
 
 variable "os_flavor" {
@@ -352,8 +367,23 @@ variable "pip_diag_logs" {
   default     = ["DDoSProtectionNotifications", "DDoSMitigationFlowLogs", "DDoSMitigationReports"]
 }
 
+variable "lb_diag_logs" {
+  description = "Load balancer Category details for Azure Diagnostic setting"
+  default     = ["LoadBalancerAlertEvent"]
+}
+
 variable "intall_iis_server_on_instances" {
   description = "Install ISS server on every Instance in the VM scale set"
+  default     = false
+}
+
+variable "vm_time_zone" {
+  description = "Specifies the Time Zone which should be used by the Virtual Machine"
+  default     = null
+}
+
+variable "deploy_log_analytics_agent" {
+  description = "Install log analytics agent to windows or linux VM scaleset instances"
   default     = false
 }
 

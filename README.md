@@ -20,24 +20,28 @@ These types of resources supported:
 ```hcl
 module "vmscaleset" {
   source  = "kumarvna/vm-scale-sets/azurerm"
-  version = "2.0.0"
+  version = "2.1.0"
 
   # Resource Group and location, VNet and Subnet detials (Required)
-  resource_group_name  = "rg-hub-demo-internal-shared-westeurope-001"
-  virtual_network_name = "vnet-default-hub-westeurope"
-  subnet_name          = "snet-management-default-hub-westeurope"
+  resource_group_name  = "rg-shared-westeurope-01"
+  virtual_network_name = "vnet-shared-hub-westeurope-001"
+  subnet_name          = "snet-management"
   vmscaleset_name      = "testvmss"
 
   # (Optional) To enable Azure Monitoring and install log analytics agents
-  log_analytics_workspace_name = var.log_analytics_workspace_id
-  hub_storage_account_name     = var.hub_storage_account_id
+  log_analytics_workspace_name = var.log_analytics_workspace_name
+   storage_account_name     = var. storage_account_name
+
+  # Deploy log analytics agents to virtual machine. Log analytics workspace name required.
+  # Defaults to `false` 
+  deploy_log_analytics_agent = false
 
   # This module support multiple Pre-Defined Linux and Windows Distributions.
   # These distributions support the Automatic OS image upgrades in virtual machine scale sets
   # Linux images: ubuntu1804, ubuntu1604, centos75, coreos
   # Windows Images: windows2012r2dc, windows2016dc, windows2019dc, windows2016dccore
   # Specify the RSA key for production workloads and set generate_admin_ssh_key argument to false
-  # When you use Autoscaling feature, instances_count will become default and minimum instance count.
+  # When you use Autoscaling feature, instances_count will become default and minimum instance count. 
   os_flavor               = "linux"
   linux_distribution_name = "ubuntu1804"
   generate_admin_ssh_key  = false
@@ -48,15 +52,15 @@ module "vmscaleset" {
   # Specify health probe port to allow LB to detect the backend endpoint status
   # Standard Load Balancer helps load-balance TCP and UDP flows on all ports simultaneously
   # Specify the list of ports based on your requirement for Load balanced ports
-  # for additional data disks, provide the list for required size for the disk.
+  # for additional data disks, provide the list for required size for the disk. 
   load_balancer_type              = "public"
   load_balancer_health_probe_port = 80
   load_balanced_port_list         = [80, 443]
   additional_data_disks           = [100, 200]
 
-  # Enable Auto scaling feature for VM scaleset by set argument to true.
+  # Enable Auto scaling feature for VM scaleset by set argument to true. 
   # Instances_count in VMSS will become default and minimum instance count.
-  # Automatically scale out the number of VM instances based on CPU Average only.
+  # Automatically scale out the number of VM instances based on CPU Average only.    
   enable_autoscale_for_vmss          = true
   minimum_instances_count            = 2
   maximum_instances_count            = 5
@@ -65,7 +69,7 @@ module "vmscaleset" {
 
   # Network Seurity group port allow definitions for each Virtual Machine
   # NSG association to be added automatically for all network interfaces.
-  # SSH port 22 and 3389 is exposed to the Internet recommended for only testing.
+  # SSH port 22 and 3389 is exposed to the Internet recommended for only testing. 
   # For production environments, we recommend using a VPN or private connection
   nsg_inbound_rules = [
     {
@@ -82,7 +86,7 @@ module "vmscaleset" {
   ]
 
   # Adding TAG's to your Azure resources (Required)
-  # ProjectName and Env are already declared above, to use them here, create a varible.
+  # ProjectName and Env are already declared above, to use them here, create a varible. 
   tags = {
     ProjectName  = "demo-internal"
     Env          = "dev"
@@ -119,7 +123,7 @@ If the pre-defined Windows or Linux variants are not sufficient then, you can sp
 ```hcl
 module "vmscaleset" {
   source  = "kumarvna/vm-scale-sets/azurerm"
-  version = "2.0.0"
+  version = "2.1.0"
 
   # .... omitted
 
@@ -232,7 +236,7 @@ In the Source and Destination columns, `VirtualNetwork`, `AzureLoadBalancer`, an
 ```hcl
 module "vmscaleset" {
   source  = "kumarvna/vm-scale-sets/azurerm"
-  version = "2.0.0"
+  version = "2.1.0"
 
   # .... omitted
   
@@ -292,7 +296,7 @@ End Date of the Project|Date when this application, workload, or service is plan
 ```hcl
 module "vmscaleset" {
   source  = "kumarvna/vm-scale-sets/azurerm"
-  version = "2.0.0"
+  version = "2.1.0"
 
   # Resource Group, location, VNet and Subnet details
   resource_group_name  = "rg-hub-tieto-internal-shared-westeurope-001"
@@ -314,13 +318,13 @@ module "vmscaleset" {
 Name | Version
 -----|--------
 terraform | >= 0.13
-azurerm | ~> 2.27.0
+azurerm | >= 2.59.0
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-azurerm | 2.27.0
+azurerm | 2.59.0
 random | n/a
 tls | n/a
 
@@ -334,9 +338,12 @@ Name | Description | Type | Default
 `subnet_name`|The name of the subnet to use in VM scale set|string |`""`
 `vmscaleset_name`|Specifies the name of the virtual machine scale set resource|string | `""`
 `log_analytics_workspace_name`|The name of log analytics workspace name|string | `""`
-`hub_storage_account_name`|The name of the hub storage account to store logs|string | `""`
+`storage_account_name`|The name of the hub storage account to store logs|string | `""`
+`enable_load_balancer`|Controls if public load balancer should be created|sting|`true`
 `load_balancer_sku`|The SKU of the Azure Load Balancer. Accepted values are `Basic` and `Standard`|string | `"Standard"`
 `load_balancer_type`|Controls the type of load balancer should be created. Possible values are `public` and `private`|string | `"private"`
+`public_ip_allocation_method`|Defines the allocation method for this IP address. Possible values are `Static` or `Dynamic`|string|`Static`
+`public_ip_sku`|The SKU of the Public IP. Accepted values are `Basic` and `Standard`|string|`Standard`
 `enable_lb_nat_pool`|If enabled load balancer NAT pool will be created for SSH if flavor is Linux and for RDP if flavor is windows|string|`false`
 `nat_pool_frontend_ports`|Optional override for default NAT ports|list(number)|`[50000, 50119]`
 `os_flavor`|Specify the flavor of the operating system image to deploy Virtual Machine. Possible values are `windows` and `linux`|string |`"windows"`
@@ -363,6 +370,7 @@ Name | Description | Type | Default
 `disable_password_authentication`|Should Password Authentication be disabled on this Virtual Machine. Applicable to Linux Virtual machine|string|`true`
 `admin_username`|The username of the local administrator used for the Virtual Machine|string|`"azureadmin"`
 `admin_password`|The Password which should be used for the local-administrator on the Virtual Machines|string|`null`
+`random_password_length`|The desired length of random password created by this module|number|`24`
 `private_ip_address_allocation_type`|The allocation method used for the Private IP Address. Possible values are Dynamic and Static.|string|`false`
 `lb_private_ip_address`|The Static Private IP Address to assign to the Load Balancer. This is valid only when `private_ip_address_allocation` is set to `Static`.|string|`null`
 `enable_ip_forwarding`|Should IP Forwarding be enabled?|string|`false`
@@ -376,6 +384,9 @@ Name | Description | Type | Default
 `scale_out_cpu_percentage_threshold`|Specifies the threshold % of the metric that triggers the scale out action.|number|80
 `scale_in_cpu_percentage_threshold`|Specifies the threshold % of the metric that triggers the scale in action.|number|20
 `scaling_action_instances_number`|The number of instances involved in the scaling action|number|`1`
+`intall_iis_server_on_instances`|Install ISS server on every Instance in the VM scale set|string|`false`
+`vm_time_zone`|Specifies the Time Zone which should be used by the Virtual Machine. Ex. `"UTC"` or `"W. Europe Standard Time"` [The possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-consumed-by-azure/) |string|`null`
+`deploy_log_analytics_agent`|Install log analytics agent to windows or linux VM scaleset instances|string|`false`
 `Tags`|A map of tags to add to all resources|map|`{}`
 
 ## Outputs
@@ -400,7 +411,7 @@ Name | Description | Type | Default
 
 ## Resource Graph
 
-![Resource Graph](graph.png)
+![Resource Graph](graph.svg)
 
 ## Authors
 
