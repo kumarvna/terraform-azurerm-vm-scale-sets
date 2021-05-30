@@ -1,7 +1,6 @@
 module "vmscaleset" {
-  //source  = "kumarvna/vm-scale-sets/azurerm"
-  //version = "2.0.0"
-  source = "github.com/kumarvna/terraform-azurerm-vm-scale-sets?ref=develop"
+  source  = "kumarvna/vm-scale-sets/azurerm"
+  version = "2.1.0"
 
   # Resource Group and location, VNet and Subnet detials (Required)
   resource_group_name  = "rg-shared-westeurope-01"
@@ -11,12 +10,12 @@ module "vmscaleset" {
   vm_computer_name     = "websrv1"
 
   # (Optional) To enable Azure Monitoring and install log analytics agents
-  log_analytics_workspace_name = "loganalytics-we-sharedtest2" #var.log_analytics_workspace_name
-  hub_storage_account_name     = "stdiagfortesting"            #var.hub_storage_account_name
+  log_analytics_workspace_name = var.log_analytics_workspace_name
+  hub_storage_account_name     = var.hub_storage_account_name
 
   # Deploy log analytics agents to virtual machine. Log analytics workspace name required.
   # Defaults to `false` 
-  deploy_log_analytics_agent = true
+  deploy_log_analytics_agent = false
 
   # This module support multiple Pre-Defined Linux and Windows Distributions.
   # These distributions support the Automatic OS image upgrades in virtual machine scale sets
@@ -28,7 +27,7 @@ module "vmscaleset" {
   windows_distribution_name = "windows2019dc"
   instances_count           = 2
   admin_username            = "azureadmin"
-  #admin_password            = "P@$$w0rd1234!"
+  admin_password            = "P@$$w0rd1234!"
 
   # Public and private load balancer support for VM scale sets
   # Specify health probe port to allow LB to detect the backend endpoint status
@@ -50,7 +49,7 @@ module "vmscaleset" {
   scale_in_cpu_percentage_threshold  = 20
 
   # Deploy IIS server minimal installation on VMMS instances
-  intall_iis_server_on_instances = true
+  intall_iis_server_on_instances = false
 
   # Network Seurity group port allow definitions for each Virtual Machine
   # NSG association to be added automatically for all network interfaces.

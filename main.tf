@@ -43,8 +43,8 @@ data "azurerm_log_analytics_workspace" "logws" {
 }
 
 data "azurerm_storage_account" "storeacc" {
-  count               = var.hub_storage_account_name != null ? 1 : 0
-  name                = var.hub_storage_account_name
+  count               = var.storage_account_name != null ? 1 : 0
+  name                = var.storage_account_name
   resource_group_name = data.azurerm_resource_group.rg.name
 }
 
@@ -481,7 +481,7 @@ resource "azurerm_virtual_machine_scale_set_extension" "omsagentlinux" {
 # azurerm monitoring diagnostics 
 #--------------------------------------
 resource "azurerm_monitor_diagnostic_setting" "vmmsdiag" {
-  count                      = var.log_analytics_workspace_name != null && var.hub_storage_account_name != null ? 1 : 0
+  count                      = var.log_analytics_workspace_name != null && var.storage_account_name != null ? 1 : 0
   name                       = lower("${var.vmscaleset_name}-diag")
   target_resource_id         = var.os_flavor == "windows" ? azurerm_windows_virtual_machine_scale_set.winsrv_vmss.0.id : azurerm_linux_virtual_machine_scale_set.linux_vmss.0.id
   storage_account_id         = data.azurerm_storage_account.storeacc.0.id
@@ -497,7 +497,7 @@ resource "azurerm_monitor_diagnostic_setting" "vmmsdiag" {
 }
 
 resource "azurerm_monitor_diagnostic_setting" "nsg" {
-  count                      = var.log_analytics_workspace_name != null && var.hub_storage_account_name != null ? 1 : 0
+  count                      = var.log_analytics_workspace_name != null && var.storage_account_name != null ? 1 : 0
   name                       = lower("nsg-${var.vmscaleset_name}-diag")
   target_resource_id         = azurerm_network_security_group.nsg.id
   storage_account_id         = data.azurerm_storage_account.storeacc.0.id
@@ -517,7 +517,7 @@ resource "azurerm_monitor_diagnostic_setting" "nsg" {
 }
 
 resource "azurerm_monitor_diagnostic_setting" "lb-pip" {
-  count                      = var.load_balancer_type == "public" && var.log_analytics_workspace_name != null && var.hub_storage_account_name != null ? 1 : 0
+  count                      = var.load_balancer_type == "public" && var.log_analytics_workspace_name != null && var.storage_account_name != null ? 1 : 0
   name                       = "${var.vmscaleset_name}-pip-diag"
   target_resource_id         = azurerm_public_ip.pip.0.id
   storage_account_id         = data.azurerm_storage_account.storeacc.0.id
@@ -545,7 +545,7 @@ resource "azurerm_monitor_diagnostic_setting" "lb-pip" {
 }
 
 resource "azurerm_monitor_diagnostic_setting" "lb" {
-  count                      = var.load_balancer_type == "public" && var.log_analytics_workspace_name != null && var.hub_storage_account_name != null ? 1 : 0
+  count                      = var.load_balancer_type == "public" && var.log_analytics_workspace_name != null && var.storage_account_name != null ? 1 : 0
   name                       = "${var.vmscaleset_name}-lb-diag"
   target_resource_id         = azurerm_lb.vmsslb.0.id
   storage_account_id         = data.azurerm_storage_account.storeacc.0.id

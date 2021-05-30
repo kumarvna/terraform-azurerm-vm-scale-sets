@@ -30,7 +30,7 @@ module "vmscaleset" {
 
   # (Optional) To enable Azure Monitoring and install log analytics agents
   log_analytics_workspace_name = var.log_analytics_workspace_name
-  hub_storage_account_name     = var.hub_storage_account_name
+   storage_account_name     = var. storage_account_name
 
   # Deploy log analytics agents to virtual machine. Log analytics workspace name required.
   # Defaults to `false` 
@@ -123,7 +123,7 @@ If the pre-defined Windows or Linux variants are not sufficient then, you can sp
 ```hcl
 module "vmscaleset" {
   source  = "kumarvna/vm-scale-sets/azurerm"
-  version = "2.0.0"
+  version = "2.1.0"
 
   # .... omitted
 
@@ -236,7 +236,7 @@ In the Source and Destination columns, `VirtualNetwork`, `AzureLoadBalancer`, an
 ```hcl
 module "vmscaleset" {
   source  = "kumarvna/vm-scale-sets/azurerm"
-  version = "2.0.0"
+  version = "2.1.0"
 
   # .... omitted
   
@@ -296,7 +296,7 @@ End Date of the Project|Date when this application, workload, or service is plan
 ```hcl
 module "vmscaleset" {
   source  = "kumarvna/vm-scale-sets/azurerm"
-  version = "2.0.0"
+  version = "2.1.0"
 
   # Resource Group, location, VNet and Subnet details
   resource_group_name  = "rg-hub-tieto-internal-shared-westeurope-001"
@@ -318,13 +318,13 @@ module "vmscaleset" {
 Name | Version
 -----|--------
 terraform | >= 0.13
-azurerm | ~> 2.27.0
+azurerm | >= 2.59.0
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-azurerm | 2.27.0
+azurerm | 2.59.0
 random | n/a
 tls | n/a
 
@@ -338,9 +338,12 @@ Name | Description | Type | Default
 `subnet_name`|The name of the subnet to use in VM scale set|string |`""`
 `vmscaleset_name`|Specifies the name of the virtual machine scale set resource|string | `""`
 `log_analytics_workspace_name`|The name of log analytics workspace name|string | `""`
-`hub_storage_account_name`|The name of the hub storage account to store logs|string | `""`
+`storage_account_name`|The name of the hub storage account to store logs|string | `""`
+`enable_load_balancer`|Controls if public load balancer should be created|sting|`true`
 `load_balancer_sku`|The SKU of the Azure Load Balancer. Accepted values are `Basic` and `Standard`|string | `"Standard"`
 `load_balancer_type`|Controls the type of load balancer should be created. Possible values are `public` and `private`|string | `"private"`
+`public_ip_allocation_method`|Defines the allocation method for this IP address. Possible values are `Static` or `Dynamic`|string|`Static`
+`public_ip_sku`|The SKU of the Public IP. Accepted values are `Basic` and `Standard`|string|`Standard`
 `enable_lb_nat_pool`|If enabled load balancer NAT pool will be created for SSH if flavor is Linux and for RDP if flavor is windows|string|`false`
 `nat_pool_frontend_ports`|Optional override for default NAT ports|list(number)|`[50000, 50119]`
 `os_flavor`|Specify the flavor of the operating system image to deploy Virtual Machine. Possible values are `windows` and `linux`|string |`"windows"`
@@ -367,6 +370,7 @@ Name | Description | Type | Default
 `disable_password_authentication`|Should Password Authentication be disabled on this Virtual Machine. Applicable to Linux Virtual machine|string|`true`
 `admin_username`|The username of the local administrator used for the Virtual Machine|string|`"azureadmin"`
 `admin_password`|The Password which should be used for the local-administrator on the Virtual Machines|string|`null`
+`random_password_length`|The desired length of random password created by this module|number|`24`
 `private_ip_address_allocation_type`|The allocation method used for the Private IP Address. Possible values are Dynamic and Static.|string|`false`
 `lb_private_ip_address`|The Static Private IP Address to assign to the Load Balancer. This is valid only when `private_ip_address_allocation` is set to `Static`.|string|`null`
 `enable_ip_forwarding`|Should IP Forwarding be enabled?|string|`false`
@@ -380,6 +384,9 @@ Name | Description | Type | Default
 `scale_out_cpu_percentage_threshold`|Specifies the threshold % of the metric that triggers the scale out action.|number|80
 `scale_in_cpu_percentage_threshold`|Specifies the threshold % of the metric that triggers the scale in action.|number|20
 `scaling_action_instances_number`|The number of instances involved in the scaling action|number|`1`
+`intall_iis_server_on_instances`|Install ISS server on every Instance in the VM scale set|string|`false`
+`vm_time_zone`|Specifies the Time Zone which should be used by the Virtual Machine. Ex. `"UTC"` or `"W. Europe Standard Time"` [The possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-consumed-by-azure/) |string|`null`
+`deploy_log_analytics_agent`|Install log analytics agent to windows or linux VM scaleset instances|string|`false`
 `Tags`|A map of tags to add to all resources|map|`{}`
 
 ## Outputs

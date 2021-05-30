@@ -28,7 +28,7 @@ variable "log_analytics_workspace_name" {
   default     = null
 }
 
-variable "hub_storage_account_name" {
+variable "storage_account_name" {
   description = "The name of the hub storage account to store logs"
   default     = null
 }
@@ -383,7 +383,7 @@ variable "vm_time_zone" {
 }
 
 variable "deploy_log_analytics_agent" {
-  description = "Install log analytics agent to windows or linux VM"
+  description = "Install log analytics agent to windows or linux VM scaleset instances"
   default     = false
 }
 
