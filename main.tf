@@ -294,7 +294,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "winsrv_vmss" {
   upgrade_mode             = var.os_upgrade_mode
   health_probe_id          = var.enable_load_balancer ? azurerm_lb_probe.lbp[0].id : null
   provision_vm_agent       = true
-  enable_automatic_updates = true
+  enable_automatic_updates = false
   license_type             = var.license_type
   timezone                 = var.vm_time_zone
 
