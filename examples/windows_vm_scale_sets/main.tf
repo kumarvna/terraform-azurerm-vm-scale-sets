@@ -4,9 +4,9 @@ module "vmscaleset" {
   source = "source = github.com/kumarvna/terraform-azurerm-vm-scale-sets?ref=develop"
 
   # Resource Group and location, VNet and Subnet detials (Required)
-  resource_group_name  = "rg-demo-westeurope-01" #"rg-hub-demo-internal-shared-westeurope-001"
-  virtual_network_name = "vnet-demo-westeurope-001"
-  subnet_name          = "appgateway"
+  resource_group_name  = "rg-shared-westeurope-01"
+  virtual_network_name = "vnet-shared-hub-westeurope-001"
+  subnet_name          = "snet-appgateway"
   vmscaleset_name      = "testvmss"
   vm_computer_name     = "websrv1"
 
