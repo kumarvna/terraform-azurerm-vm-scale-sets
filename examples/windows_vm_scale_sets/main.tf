@@ -1,6 +1,7 @@
 module "vmscaleset" {
-  source  = "kumarvna/vm-scale-sets/azurerm"
-  version = "2.0.0"
+  //source  = "kumarvna/vm-scale-sets/azurerm"
+  //version = "2.0.0"
+  source = "source = github.com/kumarvna/terraform-azurerm-vm-scale-sets?ref=develop"
 
   # Resource Group and location, VNet and Subnet detials (Required)
   resource_group_name  = "rg-demo-westeurope-01" #"rg-hub-demo-internal-shared-westeurope-001"
@@ -10,8 +11,12 @@ module "vmscaleset" {
   vm_computer_name     = "websrv1"
 
   # (Optional) To enable Azure Monitoring and install log analytics agents
-  log_analytics_workspace_name = var.log_analytics_workspace_name
-  hub_storage_account_name     = var.hub_storage_account_name
+  log_analytics_workspace_name = "loganalytics-we-sharedtest2" #var.log_analytics_workspace_name
+  hub_storage_account_name     = "stdiagfortesting"            #var.hub_storage_account_name
+
+  # Deploy log analytics agents to virtual machine. Log analytics workspace name required.
+  # Defaults to `false` 
+  deploy_log_analytics_agent = true
 
   # This module support multiple Pre-Defined Linux and Windows Distributions.
   # These distributions support the Automatic OS image upgrades in virtual machine scale sets
