@@ -101,7 +101,7 @@ module "vmscaleset" {
 
 This module utilizes __`azureadmin`__ as a local administrator on virtual machines. If you want to you use custom username, then specify the same by setting up the argument `admin_username` with valid user string.
 
-By default, this module generates a strong password for all virtual machines. If you want to set the custom password, specify the argument `admin_password` with valid string.
+By default, this module generates a strong password for all virtual machines also allows you to change the length of the random password (currently 24) using the `random_password_length = 32` variable. If you want to set the custom password, specify the argument `admin_password` with a valid string.
 
 This module also generates SSH2 Key pair for Linux servers by default, however, it is only recommended to use for dev environment. For production environments, please generate your own SSH2 key with a passphrase and input the key by providing the path to the argument `admin_ssh_key_data`.
 
@@ -324,7 +324,7 @@ azurerm | >= 2.59.0
 
 | Name | Version |
 |------|---------|
-azurerm | 2.59.0
+azurerm |>= 2.59.0
 random | n/a
 tls | n/a
 
