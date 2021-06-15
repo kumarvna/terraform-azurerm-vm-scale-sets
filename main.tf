@@ -332,7 +332,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "winsrv_vmss" {
     network_security_group_id     = azurerm_network_security_group.nsg.id
 
     ip_configuration {
-      name                                   = lower("ipconig-${format("vm%s%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")), count.index + 1)}")
+      name                                   = lower("ipconfig-${format("vm%s%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")), count.index + 1)}")
       primary                                = true
       subnet_id                              = data.azurerm_subnet.snet.id
       load_balancer_backend_address_pool_ids = var.enable_load_balancer ? [azurerm_lb_backend_address_pool.bepool[0].id] : null
