@@ -4,7 +4,10 @@ Azure virtual machine scale sets let you create and manage a group of identical,
 
 This module deploys Windows or Linux virtual machine scale sets with Public / Private Load Balancer support and many other features.
 
-These types of resources supported:
+> **[NOTE]**
+> **This module now supports the meta arguments including `providers`, `depends_on`, `count`, and `for_each`.**
+
+## Resources Supported
 
 * [Linux Virtual Machine Scale Set](https://www.terraform.io/docs/providers/azurerm/r/linux_virtual_machine_scale_set.html)
 * [Windows Virtual Machine Scale Set](https://www.terraform.io/docs/providers/azurerm/r/windows_virtual_machine_scale_set.html)
