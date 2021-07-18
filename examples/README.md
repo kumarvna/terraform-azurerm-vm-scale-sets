@@ -27,8 +27,8 @@ module "vmscaleset" {
   vmscaleset_name      = "testvmss"
 
   # (Optional) To enable Azure Monitoring and install log analytics agents
+  # (Optional) Specify `storage_account_name` to save monitoring logs to storage.   
   log_analytics_workspace_name = var.log_analytics_workspace_name
-  storage_account_name         = var.storage_account_name
 
   # Deploy log analytics agents to virtual machine. Log analytics workspace name required.
   # Defaults to `false` 
@@ -117,8 +117,8 @@ module "vmscaleset" {
   vm_computer_name     = "websrv1"
 
   # (Optional) To enable Azure Monitoring and install log analytics agents
+  # (Optional) Specify `storage_account_name` to save monitoring logs to storage.   
   log_analytics_workspace_name = var.log_analytics_workspace_name
-  storage_account_name         = var.storage_account_name
 
   # Deploy log analytics agents to virtual machine. Log analytics workspace name required.
   # Defaults to `false` 
