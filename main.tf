@@ -484,7 +484,7 @@ resource "azurerm_monitor_diagnostic_setting" "vmmsdiag" {
   count                      = var.log_analytics_workspace_name != null && var.storage_account_name != null ? 1 : 0
   name                       = lower("${var.vmscaleset_name}-diag")
   target_resource_id         = var.os_flavor == "windows" ? azurerm_windows_virtual_machine_scale_set.winsrv_vmss.0.id : azurerm_linux_virtual_machine_scale_set.linux_vmss.0.id
-  storage_account_id         = data.azurerm_storage_account.storeacc.0.id
+  storage_account_id         = var.storage_account_name != null ? data.azurerm_storage_account.storeacc.0.id : null
   log_analytics_workspace_id = data.azurerm_log_analytics_workspace.logws.0.id
 
   metric {
@@ -500,7 +500,7 @@ resource "azurerm_monitor_diagnostic_setting" "nsg" {
   count                      = var.log_analytics_workspace_name != null && var.storage_account_name != null ? 1 : 0
   name                       = lower("nsg-${var.vmscaleset_name}-diag")
   target_resource_id         = azurerm_network_security_group.nsg.id
-  storage_account_id         = data.azurerm_storage_account.storeacc.0.id
+  storage_account_id         = var.storage_account_name != null ? data.azurerm_storage_account.storeacc.0.id : null
   log_analytics_workspace_id = data.azurerm_log_analytics_workspace.logws.0.id
 
   dynamic "log" {
