@@ -1,6 +1,11 @@
+# Azurerm provider configuration
+provider "azurerm" {
+  features {}
+}
+
 module "vmscaleset" {
   source  = "kumarvna/vm-scale-sets/azurerm"
-  version = "2.1.0"
+  version = "2.2.0"
 
   # Resource Group and location, VNet and Subnet detials (Required)
   resource_group_name  = "rg-shared-westeurope-01"
