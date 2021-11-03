@@ -453,6 +453,26 @@ variable "managed_identity_ids" {
   default     = null
 }
 
+variable "winrm_protocol" {
+  description = "Specifies the protocol of winrm listener. Possible values are `Http` or `Https`"
+  default     = null
+}
+
+variable "key_vault_certificate_secret_url" {
+  description = "The Secret URL of a Key Vault Certificate, which must be specified when `protocol` is set to `Https`"
+  default     = null
+}
+
+variable "additional_unattend_content" {
+  description = "The XML formatted content that is added to the unattend.xml file for the specified path and component."
+  default     = null
+}
+
+variable "additional_unattend_content_setting" {
+  description = "The name of the setting to which the content applies. Possible values are `AutoLogon` and `FirstLogonCommands`"
+  default     = null
+}
+
 variable "enable_boot_diagnostics" {
   description = "Should the boot diagnostics enabled?"
   default     = false
@@ -467,30 +487,10 @@ variable "storage_account_uri" {
 
 
 
-
-
-
 variable "grace_period" {
   description = "Amount of time (in minutes, between 30 and 90, defaults to 30 minutes) for which automatic repairs will be delayed."
   default     = "PT30M"
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 variable "enable_autoscale_for_vmss" {
   description = "Manages a AutoScale Setting which can be applied to Virtual Machine Scale Sets"

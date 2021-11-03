@@ -492,6 +492,22 @@ resource "azurerm_windows_virtual_machine_scale_set" "winsrv_vmss" {
     }
   }
 
+  dynamic "winrm_listener" {
+    for_each = var.winrm_protocol != null ? [1] : []
+    content {
+      protocol        = var.winrm_protocol
+      certificate_url = var.winrm_protocol == "Https" ? var.key_vault_certificate_secret_url : null
+    }
+  }
+
+  dynamic "additional_unattend_content" {
+    for_each = var.additional_unattend_content != null ? [1] : []
+    content {
+      content = var.additional_unattend_content
+      setting = var.additional_unattend_content_setting
+    }
+  }
+
   dynamic "boot_diagnostics" {
     for_each = var.enable_boot_diagnostics ? [1] : []
     content {
