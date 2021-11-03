@@ -180,9 +180,19 @@ variable "do_not_run_extensions_on_overprovisioned_machines" {
   default     = false
 }
 
+variable "enable_windows_vm_automatic_updates" {
+  description = "Are automatic updates enabled for Windows Virtual Machine in this scale set?"
+  default     = true
+}
+
 variable "enable_encryption_at_host" {
   description = " Should all of the disks (including the temp disk) attached to this Virtual Machine be encrypted by enabling Encryption at Host?"
   default     = false
+}
+
+variable "license_type" {
+  description = "Specifies the type of on-premise license which should be used for this Virtual Machine. Possible values are None, Windows_Client and Windows_Server."
+  default     = "None"
 }
 
 variable "platform_fault_domain_count" {
@@ -367,6 +377,11 @@ variable "additional_data_disks" {
   default     = []
 }
 
+variable "additional_data_disks_storage_account_type" {
+  description = "The Type of Storage Account which should back this Data Disk. Possible values include Standard_LRS, StandardSSD_LRS, Premium_LRS and UltraSSD_LRS."
+  default     = "Standard_LRS"
+}
+
 variable "dns_servers" {
   description = "List of dns servers to use for network interface"
   default     = []
@@ -436,11 +451,6 @@ variable "storage_account_uri" {
 
 
 
-variable "license_type" {
-  description = "Specifies the type of on-premise license which should be used for this Virtual Machine. Possible values are None, Windows_Client and Windows_Server."
-  default     = "None"
-}
-
 
 
 
@@ -452,10 +462,7 @@ variable "grace_period" {
 
 
 
-variable "additional_data_disks_storage_account_type" {
-  description = "The Type of Storage Account which should back this Data Disk. Possible values include Standard_LRS, StandardSSD_LRS, Premium_LRS and UltraSSD_LRS."
-  default     = "Standard_LRS"
-}
+
 
 
 

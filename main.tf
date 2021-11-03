@@ -358,6 +358,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "linux_vmss" {
   lifecycle {
     ignore_changes = [
       tags,
+      ip_tag,
     ]
   }
 
@@ -369,27 +370,33 @@ resource "azurerm_linux_virtual_machine_scale_set" "linux_vmss" {
 # Windows Virutal machine scale set
 #---------------------------------------
 resource "azurerm_windows_virtual_machine_scale_set" "winsrv_vmss" {
-  count                    = var.os_flavor == "windows" ? 1 : 0
-  name                     = format("%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")))
-  computer_name_prefix     = var.computer_name_prefix == null && var.instances_count == 1 ? substr(var.vmscaleset_name, 0, 15) : substr(format("%s%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")), count.index + 1), 0, 15)
-  resource_group_name      = data.azurerm_resource_group.rg.name
-  location                 = data.azurerm_resource_group.rg.location
-  overprovision            = var.overprovision
-  sku                      = var.virtual_machine_size
-  instances                = var.instances_count
-  zones                    = var.availability_zones
-  zone_balance             = var.availability_zone_balance
-  single_placement_group   = var.single_placement_group
-  admin_username           = var.admin_username
-  admin_password           = var.admin_password == null ? random_password.passwd[count.index].result : var.admin_password
-  tags                     = merge({ "ResourceName" = format("%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", ""))) }, var.tags, )
-  source_image_id          = var.source_image_id != null ? var.source_image_id : null
-  upgrade_mode             = var.os_upgrade_mode
-  health_probe_id          = var.enable_load_balancer ? azurerm_lb_probe.lbp[0].id : null
-  provision_vm_agent       = true
-  enable_automatic_updates = false
-  license_type             = var.license_type
-  timezone                 = var.vm_time_zone
+  count                                             = var.os_flavor == "windows" ? 1 : 0
+  name                                              = format("%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")))
+  computer_name_prefix                              = var.computer_name_prefix == null && var.instances_count == 1 ? substr(var.vmscaleset_name, 0, 15) : substr(format("%s%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")), count.index + 1), 0, 15)
+  resource_group_name                               = data.azurerm_resource_group.rg.name
+  location                                          = data.azurerm_resource_group.rg.location
+  sku                                               = var.virtual_machine_size
+  instances                                         = var.instances_count
+  admin_username                                    = var.admin_username
+  admin_password                                    = var.admin_password == null ? random_password.passwd[count.index].result : var.admin_password
+  custom_data                                       = var.custom_data
+  overprovision                                     = var.overprovision
+  do_not_run_extensions_on_overprovisioned_machines = var.do_not_run_extensions_on_overprovisioned_machines
+  enable_automatic_updates                          = var.enable_windows_vm_automatic_updates
+  encryption_at_host_enabled                        = var.enable_encryption_at_host
+  health_probe_id                                   = var.enable_load_balancer ? azurerm_lb_probe.lbp[0].id : null
+  license_type                                      = var.license_type
+  platform_fault_domain_count                       = var.platform_fault_domain_count
+  provision_vm_agent                                = true
+  proximity_placement_group_id                      = var.enable_proximity_placement_group ? azurerm_proximity_placement_group.appgrp.0.id : null
+  scale_in_policy                                   = var.scale_in_policy
+  single_placement_group                            = var.single_placement_group
+  source_image_id                                   = var.source_image_id != null ? var.source_image_id : null
+  upgrade_mode                                      = var.os_upgrade_mode
+  timezone                                          = var.vm_time_zone
+  zones                                             = var.availability_zones
+  zone_balance                                      = var.availability_zone_balance
+  tags                                              = merge({ "resourcename" = format("%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", ""))) }, var.tags, )
 
   dynamic "source_image_reference" {
     for_each = var.source_image_id != null ? [] : [1]
@@ -402,8 +409,11 @@ resource "azurerm_windows_virtual_machine_scale_set" "winsrv_vmss" {
   }
 
   os_disk {
-    storage_account_type = var.os_disk_storage_account_type
-    caching              = "ReadWrite"
+    storage_account_type      = var.os_disk_storage_account_type
+    caching                   = var.os_disk_caching
+    disk_encryption_set_id    = var.disk_encryption_set_id
+    disk_size_gb              = var.disk_size_gb
+    write_accelerator_enabled = var.enable_os_disk_write_accelerator
   }
 
   dynamic "data_disk" {
@@ -412,6 +422,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "winsrv_vmss" {
       lun                  = data_disk.key
       disk_size_gb         = data_disk.value
       caching              = "ReadWrite"
+      create_option        = "Empty"
       storage_account_type = var.additional_data_disks_storage_account_type
     }
   }
@@ -434,8 +445,8 @@ resource "azurerm_windows_virtual_machine_scale_set" "winsrv_vmss" {
       dynamic "public_ip_address" {
         for_each = var.assign_public_ip_to_each_vm_in_vmss ? [{}] : []
         content {
-          name              = lower("pip-${format("vm%s%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")), count.index + 1)}")
-          domain_name_label = format("vm-%s%s-pip0${count.index + 1}", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")))
+          name                = lower("pip-${format("vm%s%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")), count.index + 1)}")
+          public_ip_prefix_id = var.public_ip_prefix_id
         }
       }
     }
