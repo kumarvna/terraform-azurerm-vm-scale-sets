@@ -48,7 +48,7 @@ output "load_balancer_rules_id" {
 
 output "network_security_group_id" {
   description = "The resource id of Network security group"
-  value       = azurerm_network_security_group.nsg.id
+  value       = var.existing_network_security_group_id == null ? azurerm_network_security_group.nsg.*.id : null
 }
 
 output "linux_virtual_machine_scale_set_name" {

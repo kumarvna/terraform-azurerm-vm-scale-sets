@@ -13,16 +13,6 @@ variable "subnet_name" {
   default     = ""
 }
 
-variable "vmscaleset_name" {
-  description = "Specifies the name of the virtual machine scale set resource"
-  default     = ""
-}
-
-variable "vm_computer_name" {
-  description = "Specifies the name of the virtual machine inside the VM scale set"
-  default     = ""
-}
-
 variable "log_analytics_workspace_name" {
   description = "The name of log analytics workspace name"
   default     = null
@@ -38,9 +28,29 @@ variable "random_password_length" {
   default     = 24
 }
 
-variable "load_balancer_sku" {
-  description = "The SKU of the Azure Load Balancer. Accepted values are Basic and Standard."
+variable "public_ip_allocation_method" {
+  description = "Defines the allocation method for this IP address. Possible values are `Static` or `Dynamic`"
+  default     = "Static"
+}
+
+variable "public_ip_sku" {
+  description = "The SKU of the Public IP. Accepted values are `Basic` and `Standard`"
   default     = "Standard"
+}
+
+variable "domain_name_label" {
+  description = "Label for the Domain Name. Will be used to make up the FQDN. If a domain name label is specified, an A DNS record is created for the public IP in the Microsoft Azure DNS system."
+  default     = null
+}
+
+variable "public_ip_availability_zone" {
+  description = "The availability zone to allocate the Public IP in. Possible values are `Zone-Redundant`, `1`,`2`, `3`, and `No-Zone`"
+  default     = "Zone-Redundant"
+}
+
+variable "public_ip_sku_tier" {
+  description = "The SKU Tier that should be used for the Public IP. Possible values are `Regional` and `Global`"
+  default     = "Regional"
 }
 
 variable "enable_load_balancer" {
@@ -51,6 +61,31 @@ variable "enable_load_balancer" {
 variable "load_balancer_type" {
   description = "Controls the type of load balancer should be created. Possible values are public and private"
   default     = "private"
+}
+
+variable "load_balancer_sku" {
+  description = "The SKU of the Azure Load Balancer. Accepted values are Basic and Standard."
+  default     = "Standard"
+}
+
+variable "lb_availability_zone" {
+  description = "A list of Availability Zones which the Load Balancer's IP Addresses should be created in. Possible values are `Zone-Redundant`, `1`, `2`, `3`, and `No-Zone`. Availability Zone can only be updated whenever the name of the front end ip configuration changes"
+  default     = "Zone-Redundant"
+}
+
+variable "lb_probe_protocol" {
+  description = "Specifies the protocol of the end point. Possible values are `Http`, `Https` or `Tcp`. If `Tcp` is specified, a received ACK is required for the probe to be successful. If `Http` is specified, a `200 OK` response from the specified `URI` is required for the probe to be successful."
+  default     = null
+}
+
+variable "lb_probe_request_path" {
+  description = "The URI used for requesting health status from the backend endpoint. Required if protocol is set to `Http` or `Https`. Otherwise, it is not allowed"
+  default     = null
+}
+
+variable "number_of_probes" {
+  description = " The number of failed probe attempts after which the backend endpoint is removed from rotation. The default value is `2`. `NumberOfProbes` multiplied by `intervalInSeconds` value must be greater or equal to 10.Endpoints are returned to rotation when at least one probe is successful."
+  default     = null
 }
 
 variable "enable_lb_nat_pool" {
@@ -64,21 +99,6 @@ variable "nat_pool_frontend_ports" {
   default     = [50000, 50119]
 }
 
-variable "public_ip_allocation_method" {
-  description = "Defines the allocation method for this IP address. Possible values are `Static` or `Dynamic`"
-  default     = "Static"
-}
-
-variable "public_ip_sku" {
-  description = "The SKU of the Public IP. Accepted values are `Basic` and `Standard`"
-  default     = "Standard"
-}
-
-variable "os_flavor" {
-  description = "Specify the flavour of the operating system image to deploy VMSS. Valid values are `windows` and `linux`"
-  default     = "windows"
-}
-
 variable "load_balancer_health_probe_port" {
   description = "Port on which the Probe queries the backend endpoint. Default `80`"
   default     = 80
@@ -90,9 +110,34 @@ variable "load_balanced_port_list" {
   default     = []
 }
 
-variable "overprovision" {
-  description = "Should Azure over-provision Virtual Machines in this Scale Set? This means that multiple Virtual Machines will be provisioned and Azure will keep the instances which become available first - which improves provisioning success rates and improves deployment time. You're not billed for these over-provisioned VM's and they don't count towards the Subscription Quota. Defaults to true."
+variable "enable_proximity_placement_group" {
+  description = "Manages a proximity placement group for virtual machines, virtual machine scale sets and availability sets."
   default     = false
+}
+
+variable "existing_network_security_group_id" {
+  description = "The resource id of existing network security group"
+  default     = null
+}
+
+variable "nsg_inbound_rules" {
+  description = "List of network rules to apply to network interface."
+  default     = []
+}
+
+variable "os_flavor" {
+  description = "Specify the flavour of the operating system image to deploy VMSS. Valid values are `windows` and `linux`"
+  default     = "windows"
+}
+
+variable "vmscaleset_name" {
+  description = "The prefix which should be used for the name of the Virtual Machines in this Scale Set. If unspecified this defaults to the value for the name field. If the value of the name field is not a valid computer_name_prefix, then you must specify computer_name_prefix"
+  default     = ""
+}
+
+variable "computer_name_prefix" {
+  description = "Specifies the name of the virtual machine inside the VM scale set"
+  default     = null
 }
 
 variable "virtual_machine_size" {
@@ -100,14 +145,69 @@ variable "virtual_machine_size" {
   default     = "Standard_A2_v2"
 }
 
-variable "os_disk_size_gb" {
-  description = "The Size of the Internal OS Disk in GB"
-  default     = 40
-}
-
 variable "instances_count" {
   description = "The number of Virtual Machines in the Scale Set."
   default     = 1
+}
+
+variable "admin_username" {
+  description = "The username of the local administrator used for the Virtual Machine."
+  default     = "azureadmin"
+}
+
+variable "admin_password" {
+  description = "The Password which should be used for the local-administrator on this Virtual Machine"
+  default     = null
+}
+
+variable "custom_data" {
+  description = "The Base64-Encoded Custom Data which should be used for this Virtual Machine Scale Set."
+  default     = null
+}
+
+variable "disable_password_authentication" {
+  description = "Should Password Authentication be disabled on this Virtual Machine Scale Set? Defaults to true."
+  default     = true
+}
+
+variable "overprovision" {
+  description = "Should Azure over-provision Virtual Machines in this Scale Set? This means that multiple Virtual Machines will be provisioned and Azure will keep the instances which become available first - which improves provisioning success rates and improves deployment time. You're not billed for these over-provisioned VM's and they don't count towards the Subscription Quota. Defaults to true."
+  default     = false
+}
+
+variable "do_not_run_extensions_on_overprovisioned_machines" {
+  description = "Should Virtual Machine Extensions be run on Overprovisioned Virtual Machines in the Scale Set?"
+  default     = false
+}
+
+variable "enable_encryption_at_host" {
+  description = " Should all of the disks (including the temp disk) attached to this Virtual Machine be encrypted by enabling Encryption at Host?"
+  default     = false
+}
+
+variable "platform_fault_domain_count" {
+  description = "Specifies the number of fault domains that are used by this Linux Virtual Machine Scale Set."
+  default     = null
+}
+
+variable "scale_in_policy" {
+  description = "The scale-in policy rule that decides which virtual machines are chosen for removal when a Virtual Machine Scale Set is scaled in. Possible values for the scale-in policy rules are `Default`, `NewestVM` and `OldestVM`"
+  default     = "Default"
+}
+
+variable "single_placement_group" {
+  description = "Allow to have cluster of 100 VMs only"
+  default     = true
+}
+
+variable "source_image_id" {
+  description = "The ID of an Image which each Virtual Machine in this Scale Set should be based on"
+  default     = null
+}
+
+variable "os_upgrade_mode" {
+  description = "Specifies how Upgrades (e.g. changing the Image/SKU) should be performed to Virtual Machine Instances. Possible values are Automatic, Manual and Rolling. Defaults to Automatic"
+  default     = "Automatic"
 }
 
 variable "availability_zones" {
@@ -120,34 +220,14 @@ variable "availability_zone_balance" {
   default     = true
 }
 
-variable "single_placement_group" {
-  description = "Allow to have cluster of 100 VMs only"
+variable "generate_admin_ssh_key" {
+  description = "Generates a secure private key and encodes it as PEM."
   default     = true
 }
 
-variable "license_type" {
-  description = "Specifies the type of on-premise license which should be used for this Virtual Machine. Possible values are None, Windows_Client and Windows_Server."
-  default     = "None"
-}
-
-variable "os_upgrade_mode" {
-  description = "Specifies how Upgrades (e.g. changing the Image/SKU) should be performed to Virtual Machine Instances. Possible values are Automatic, Manual and Rolling. Defaults to Automatic"
-  default     = "Automatic"
-}
-
-variable "enable_automatic_instance_repair" {
-  description = "Should the automatic instance repair be enabled on this Virtual Machine Scale Set?"
-  default     = false
-}
-
-variable "grace_period" {
-  description = "Amount of time (in minutes, between 30 and 90, defaults to 30 minutes) for which automatic repairs will be delayed."
-  default     = "PT30M"
-}
-
-variable "source_image_id" {
-  description = "The ID of an Image which each Virtual Machine in this Scale Set should be based on"
-  default     = null
+variable "admin_ssh_key_data" {
+  description = "specify the path to the existing ssh key to authenciate linux vm"
+  default     = ""
 }
 
 variable "custom_image" {
@@ -252,8 +332,28 @@ variable "windows_distribution_name" {
 }
 
 variable "os_disk_storage_account_type" {
-  description = "The Type of Storage Account which should back this the Internal OS Disk. Possible values include Standard_LRS, StandardSSD_LRS and Premium_LRS."
+  description = "The Type of Storage Account which should back this the Internal OS Disk. Possible values include `Standard_LRS`, `StandardSSD_LRS` and `Premium_LRS`."
   default     = "StandardSSD_LRS"
+}
+
+variable "os_disk_caching" {
+  description = "The Type of Caching which should be used for the Internal OS Disk. Possible values are `None`, `ReadOnly` and `ReadWrite`"
+  default     = "ReadWrite"
+}
+
+variable "disk_encryption_set_id" {
+  description = "The ID of the Disk Encryption Set which should be used to Encrypt this OS Disk. The Disk Encryption Set must have the `Reader` Role Assignment scoped on the Key Vault - in addition to an Access Policy to the Key Vault"
+  default     = null
+}
+
+variable "disk_size_gb" {
+  description = "The Size of the Internal OS Disk in GB, if you wish to vary from the size used in the image this Virtual Scale Set is sourced from."
+  default     = null
+}
+
+variable "enable_os_disk_write_accelerator" {
+  description = "Should Write Accelerator be Enabled for this OS Disk? This requires that the `storage_account_type` is set to `Premium_LRS` and that `caching` is set to `None`."
+  default     = false
 }
 
 variable "additional_data_disks" {
@@ -262,44 +362,9 @@ variable "additional_data_disks" {
   default     = []
 }
 
-variable "additional_data_disks_storage_account_type" {
-  description = "The Type of Storage Account which should back this Data Disk. Possible values include Standard_LRS, StandardSSD_LRS, Premium_LRS and UltraSSD_LRS."
-  default     = "Standard_LRS"
-}
-
-variable "generate_admin_ssh_key" {
-  description = "Generates a secure private key and encodes it as PEM."
-  default     = true
-}
-
-variable "admin_ssh_key_data" {
-  description = "specify the path to the existing ssh key to authenciate linux vm"
-  default     = ""
-}
-
-variable "disable_password_authentication" {
-  description = "Should Password Authentication be disabled on this Virtual Machine Scale Set? Defaults to true."
-  default     = true
-}
-
-variable "admin_username" {
-  description = "The username of the local administrator used for the Virtual Machine."
-  default     = "azureadmin"
-}
-
-variable "admin_password" {
-  description = "The Password which should be used for the local-administrator on this Virtual Machine"
-  default     = null
-}
-
-variable "private_ip_address_allocation" {
-  description = "The allocation method for the Private IP Address used by this Load Balancer. Possible values as Dynamic and Static."
-  default     = "Dynamic"
-}
-
-variable "lb_private_ip_address" {
-  description = "Private IP Address to assign to the Load Balancer."
-  default     = null
+variable "dns_servers" {
+  description = "List of dns servers to use for network interface"
+  default     = []
 }
 
 variable "enable_ip_forwarding" {
@@ -312,20 +377,76 @@ variable "enable_accelerated_networking" {
   default     = false
 }
 
-variable "dns_servers" {
-  description = "List of dns servers to use for network interface"
-  default     = []
-}
-
-variable "nsg_inbound_rules" {
-  description = "List of network rules to apply to network interface."
-  default     = []
-}
-
 variable "assign_public_ip_to_each_vm_in_vmss" {
   description = "Create a virtual machine scale set that assigns a public IP address to each VM"
   default     = false
 }
+
+variable "public_ip_prefix_id" {
+  description = "The ID of the Public IP Address Prefix from where Public IP Addresses should be allocated"
+  default     = null
+}
+
+variable "rolling_upgrade_policy" {
+  description = "Enabling automatic OS image upgrades on your scale set helps ease update management by safely and automatically upgrading the OS disk for all instances in the scale set."
+  type = object({
+    max_batch_instance_percent              = number
+    max_unhealthy_instance_percent          = number
+    max_unhealthy_upgraded_instance_percent = number
+    pause_time_between_batches              = string
+  })
+  default = {
+    max_batch_instance_percent              = 20
+    max_unhealthy_instance_percent          = 20
+    max_unhealthy_upgraded_instance_percent = 20
+    pause_time_between_batches              = "PT0S"
+  }
+}
+
+variable "license_type" {
+  description = "Specifies the type of on-premise license which should be used for this Virtual Machine. Possible values are None, Windows_Client and Windows_Server."
+  default     = "None"
+}
+
+
+
+variable "enable_automatic_instance_repair" {
+  description = "Should the automatic instance repair be enabled on this Virtual Machine Scale Set?"
+  default     = false
+}
+
+variable "grace_period" {
+  description = "Amount of time (in minutes, between 30 and 90, defaults to 30 minutes) for which automatic repairs will be delayed."
+  default     = "PT30M"
+}
+
+
+
+variable "additional_data_disks_storage_account_type" {
+  description = "The Type of Storage Account which should back this Data Disk. Possible values include Standard_LRS, StandardSSD_LRS, Premium_LRS and UltraSSD_LRS."
+  default     = "Standard_LRS"
+}
+
+
+
+
+
+
+variable "private_ip_address_allocation" {
+  description = "The allocation method for the Private IP Address used by this Load Balancer. Possible values as Dynamic and Static."
+  default     = "Dynamic"
+}
+
+variable "lb_private_ip_address" {
+  description = "Private IP Address to assign to the Load Balancer."
+  default     = null
+}
+
+
+
+
+
+
 
 variable "enable_autoscale_for_vmss" {
   description = "Manages a AutoScale Setting which can be applied to Virtual Machine Scale Sets"

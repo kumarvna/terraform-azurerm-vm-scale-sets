@@ -13,7 +13,7 @@ locals {
 # Generates SSH2 key Pair for Linux VM's (Dev Environment only)
 #---------------------------------------------------------------
 resource "tls_private_key" "rsa" {
-  count     = var.generate_admin_ssh_key == true && var.os_flavor == "linux" ? 1 : 0
+  count     = var.generate_admin_ssh_key ? 1 : 0
   algorithm = "RSA"
   rsa_bits  = 4096
 }
@@ -49,7 +49,7 @@ data "azurerm_storage_account" "storeacc" {
 }
 
 resource "random_password" "passwd" {
-  count       = var.disable_password_authentication != true || var.os_flavor == "windows" && var.admin_password == null ? 1 : 0
+  count       = (var.os_flavor == "linux" && var.disable_password_authentication == false && var.admin_password == null ? 1 : (var.os_flavor == "windows" && var.admin_password == null ? 1 : 0))
   length      = var.random_password_length
   min_upper   = 4
   min_lower   = 2
@@ -57,7 +57,7 @@ resource "random_password" "passwd" {
   special     = false
 
   keepers = {
-    admin_password = var.os_flavor
+    admin_password = var.vmscaleset_name
   }
 }
 
@@ -71,8 +71,16 @@ resource "azurerm_public_ip" "pip" {
   resource_group_name = data.azurerm_resource_group.rg.name
   allocation_method   = var.public_ip_allocation_method
   sku                 = var.public_ip_sku
-  domain_name_label   = format("vm%spip0${count.index + 1}", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")))
-  tags                = merge({ "ResourceName" = lower("pip-vm-${var.vmscaleset_name}-${data.azurerm_resource_group.rg.location}-0${count.index + 1}") }, var.tags, )
+  sku_tier            = var.public_ip_sku_tier
+  domain_name_label   = var.domain_name_label
+  availability_zone   = var.public_ip_availability_zone
+  tags                = merge({ "resourcename" = lower("pip-vm-${var.vmscaleset_name}-${data.azurerm_resource_group.rg.location}-0${count.index + 1}") }, var.tags, )
+
+  lifecycle {
+    ignore_changes = [
+      tags,
+    ]
+  }
 }
 
 #---------------------------------------
@@ -84,14 +92,21 @@ resource "azurerm_lb" "vmsslb" {
   location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
   sku                 = var.load_balancer_sku
-  tags                = merge({ "ResourceName" = var.load_balancer_type == "public" ? lower("lbext-${var.vmscaleset_name}-${data.azurerm_resource_group.rg.location}") : lower("lbint-${var.vmscaleset_name}-${data.azurerm_resource_group.rg.location}") }, var.tags, )
+  tags                = merge({ "resourcename" = var.load_balancer_type == "public" ? lower("lbext-${var.vmscaleset_name}-${data.azurerm_resource_group.rg.location}") : lower("lbint-${var.vmscaleset_name}-${data.azurerm_resource_group.rg.location}") }, var.tags, )
 
   frontend_ip_configuration {
     name                          = var.load_balancer_type == "public" ? lower("lbext-frontend-${var.vmscaleset_name}") : lower("lbint-frontend-${var.vmscaleset_name}")
+    availability_zone             = var.lb_availability_zone
     public_ip_address_id          = var.enable_load_balancer == true && var.load_balancer_type == "public" ? azurerm_public_ip.pip[count.index].id : null
     private_ip_address_allocation = var.load_balancer_type == "private" ? var.private_ip_address_allocation : null
     private_ip_address            = var.load_balancer_type == "private" && var.private_ip_address_allocation == "Static" ? var.lb_private_ip_address : null
     subnet_id                     = var.load_balancer_type == "private" ? data.azurerm_subnet.snet.id : null
+  }
+
+  lifecycle {
+    ignore_changes = [
+      tags,
+    ]
   }
 }
 
@@ -128,6 +143,9 @@ resource "azurerm_lb_probe" "lbp" {
   resource_group_name = data.azurerm_resource_group.rg.name
   loadbalancer_id     = azurerm_lb.vmsslb[count.index].id
   port                = var.load_balancer_health_probe_port
+  protocol            = var.lb_probe_protocol
+  request_path        = var.lb_probe_protocol != "Tcp" ? var.lb_probe_request_path : null
+  number_of_probes    = var.number_of_probes
 }
 
 #--------------------------
@@ -143,21 +161,45 @@ resource "azurerm_lb_rule" "lbrule" {
   frontend_port                  = tostring(var.load_balanced_port_list[count.index])
   backend_port                   = tostring(var.load_balanced_port_list[count.index])
   frontend_ip_configuration_name = azurerm_lb.vmsslb[0].frontend_ip_configuration.0.name
-  backend_address_pool_id        = azurerm_lb_backend_address_pool.bepool[0].id
+  backend_address_pool_ids       = [azurerm_lb_backend_address_pool.bepool[0].id]
+}
+
+#----------------------------------------------------------------------------------------------------
+# Proximity placement group for virtual machines, virtual machine scale sets and availability sets.
+#----------------------------------------------------------------------------------------------------
+resource "azurerm_proximity_placement_group" "appgrp" {
+  count               = var.enable_proximity_placement_group ? 1 : 0
+  name                = lower("proxigrp-${var.vmscaleset_name}-${data.azurerm_resource_group.rg.location}")
+  resource_group_name = data.azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  tags                = merge({ "resourcename" = lower("proxigrp-${var.vmscaleset_name}-${data.azurerm_resource_group.rg.location}") }, var.tags, )
+
+  lifecycle {
+    ignore_changes = [
+      tags,
+    ]
+  }
 }
 
 #---------------------------------------------------------------
 # Network security group for Virtual Machine Network Interface
 #---------------------------------------------------------------
 resource "azurerm_network_security_group" "nsg" {
+  count               = var.existing_network_security_group_id == null ? 1 : 0
   name                = lower("nsg_${var.vmscaleset_name}_${data.azurerm_resource_group.rg.location}_in")
   resource_group_name = data.azurerm_resource_group.rg.name
   location            = data.azurerm_resource_group.rg.location
-  tags                = merge({ "ResourceName" = lower("nsg_${var.vmscaleset_name}_${data.azurerm_resource_group.rg.location}_in") }, var.tags, )
+  tags                = merge({ "resourcename" = lower("nsg_${var.vmscaleset_name}_${data.azurerm_resource_group.rg.location}_in") }, var.tags, )
+
+  lifecycle {
+    ignore_changes = [
+      tags,
+    ]
+  }
 }
 
 resource "azurerm_network_security_rule" "nsg_rule" {
-  for_each                    = local.nsg_inbound_rules
+  for_each                    = { for k, v in local.nsg_inbound_rules : k => v if k != null }
   name                        = each.key
   priority                    = 100 * (each.value.idx + 1)
   direction                   = "Inbound"
@@ -169,7 +211,7 @@ resource "azurerm_network_security_rule" "nsg_rule" {
   destination_address_prefix  = element(concat(data.azurerm_subnet.snet.address_prefixes, [""]), 0)
   description                 = "Inbound_Port_${each.value.security_rule.destination_port_range}"
   resource_group_name         = data.azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg.name
+  network_security_group_name = azurerm_network_security_group.nsg.0.name
   depends_on                  = [azurerm_network_security_group.nsg]
 }
 
@@ -177,28 +219,38 @@ resource "azurerm_network_security_rule" "nsg_rule" {
 # Linux Virutal machine scale set
 #---------------------------------------
 resource "azurerm_linux_virtual_machine_scale_set" "linux_vmss" {
-  count                           = var.os_flavor == "linux" ? 1 : 0
-  name                            = format("vm%s%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")), count.index + 1)
-  resource_group_name             = data.azurerm_resource_group.rg.name
-  location                        = data.azurerm_resource_group.rg.location
-  overprovision                   = var.overprovision
-  sku                             = var.virtual_machine_size
-  instances                       = var.instances_count
-  zones                           = var.availability_zones
-  zone_balance                    = var.availability_zone_balance
-  single_placement_group          = var.single_placement_group
-  admin_username                  = var.admin_username
-  admin_password                  = var.disable_password_authentication != true && var.admin_password == null ? random_password.passwd[count.index].result : var.admin_password
-  tags                            = merge({ "ResourceName" = format("vm%s%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")), count.index + 1) }, var.tags, )
-  source_image_id                 = var.source_image_id != null ? var.source_image_id : null
-  upgrade_mode                    = var.os_upgrade_mode
-  health_probe_id                 = var.enable_load_balancer ? azurerm_lb_probe.lbp[0].id : null
-  provision_vm_agent              = true
-  disable_password_authentication = var.disable_password_authentication
+  count                                             = var.os_flavor == "linux" ? 1 : 0
+  name                                              = format("vm%s%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")), count.index + 1)
+  computer_name_prefix                              = var.computer_name_prefix == null && var.instances_count == 1 ? substr(var.vmscaleset_name, 0, 15) : substr(format("%s%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")), count.index + 1), 0, 15)
+  resource_group_name                               = data.azurerm_resource_group.rg.name
+  location                                          = data.azurerm_resource_group.rg.location
+  sku                                               = var.virtual_machine_size
+  instances                                         = var.instances_count
+  admin_username                                    = var.admin_username
+  admin_password                                    = var.disable_password_authentication == false && var.admin_password == null ? element(concat(random_password.passwd.*.result, [""]), 0) : var.admin_password
+  custom_data                                       = var.custom_data
+  disable_password_authentication                   = var.disable_password_authentication
+  overprovision                                     = var.overprovision
+  do_not_run_extensions_on_overprovisioned_machines = var.do_not_run_extensions_on_overprovisioned_machines
+  encryption_at_host_enabled                        = var.enable_encryption_at_host
+  health_probe_id                                   = var.enable_load_balancer ? azurerm_lb_probe.lbp[0].id : null
+  platform_fault_domain_count                       = var.platform_fault_domain_count
+  provision_vm_agent                                = true
+  proximity_placement_group_id                      = var.enable_proximity_placement_group ? azurerm_proximity_placement_group.appgrp.0.id : null
+  scale_in_policy                                   = var.scale_in_policy
+  single_placement_group                            = var.single_placement_group
+  source_image_id                                   = var.source_image_id != null ? var.source_image_id : null
+  upgrade_mode                                      = var.os_upgrade_mode
+  zones                                             = var.availability_zones
+  zone_balance                                      = var.availability_zone_balance
+  tags                                              = merge({ "resourcename" = format("vm%s%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")), count.index + 1) }, var.tags, )
 
-  admin_ssh_key {
-    username   = var.admin_username
-    public_key = var.generate_admin_ssh_key == true && var.os_flavor == "linux" ? tls_private_key.rsa[0].public_key_openssh : file(var.admin_ssh_key_data)
+  dynamic "admin_ssh_key" {
+    for_each = var.disable_password_authentication ? [1] : []
+    content {
+      username   = var.admin_username
+      public_key = var.admin_ssh_key_data == null ? tls_private_key.rsa[0].public_key_openssh : file(var.admin_ssh_key_data)
+    }
   }
 
   dynamic "source_image_reference" {
@@ -212,8 +264,11 @@ resource "azurerm_linux_virtual_machine_scale_set" "linux_vmss" {
   }
 
   os_disk {
-    storage_account_type = var.os_disk_storage_account_type
-    caching              = "ReadWrite"
+    storage_account_type      = var.os_disk_storage_account_type
+    caching                   = var.os_disk_caching
+    disk_encryption_set_id    = var.disk_encryption_set_id
+    disk_size_gb              = var.disk_size_gb
+    write_accelerator_enabled = var.enable_os_disk_write_accelerator
   }
 
   dynamic "data_disk" {
@@ -222,6 +277,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "linux_vmss" {
       lun                  = data_disk.key
       disk_size_gb         = data_disk.value
       caching              = "ReadWrite"
+      create_option        = "Empty"
       storage_account_type = var.additional_data_disks_storage_account_type
     }
   }
@@ -232,7 +288,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "linux_vmss" {
     dns_servers                   = var.dns_servers
     enable_ip_forwarding          = var.enable_ip_forwarding
     enable_accelerated_networking = var.enable_accelerated_networking
-    network_security_group_id     = azurerm_network_security_group.nsg.id
+    network_security_group_id     = var.existing_network_security_group_id == null ? azurerm_network_security_group.nsg.0.id : var.existing_network_security_group_id
 
     ip_configuration {
       name                                   = lower("ipconig-${format("vm%s%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")), count.index + 1)}")
@@ -242,10 +298,10 @@ resource "azurerm_linux_virtual_machine_scale_set" "linux_vmss" {
       load_balancer_inbound_nat_rules_ids    = var.enable_load_balancer && var.enable_lb_nat_pool ? [azurerm_lb_nat_pool.natpol[0].id] : null
 
       dynamic "public_ip_address" {
-        for_each = var.assign_public_ip_to_each_vm_in_vmss ? [{}] : []
+        for_each = var.assign_public_ip_to_each_vm_in_vmss ? [1] : []
         content {
-          name              = lower("pip-${format("vm%s%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")), "0${count.index + 1}")}")
-          domain_name_label = format("vm-%s-pip0${count.index + 1}", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")))
+          name                = lower("pip-${format("vm%s%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")), "0${count.index + 1}")}")
+          public_ip_prefix_id = var.public_ip_prefix_id
         }
       }
     }
@@ -256,11 +312,14 @@ resource "azurerm_linux_virtual_machine_scale_set" "linux_vmss" {
     enable_automatic_os_upgrade = true
   }
 
-  rolling_upgrade_policy {
-    max_batch_instance_percent              = 20
-    max_unhealthy_instance_percent          = 20
-    max_unhealthy_upgraded_instance_percent = 20
-    pause_time_between_batches              = "PT0S"
+  dynamic "rolling_upgrade_policy" {
+    for_each = var.os_upgrade_mode == "Automatic" ? [1] : []
+    content {
+      max_batch_instance_percent              = var.rolling_upgrade_policy.max_batch_instance_percent
+      max_unhealthy_instance_percent          = var.rolling_upgrade_policy.max_unhealthy_instance_percent
+      max_unhealthy_upgraded_instance_percent = var.rolling_upgrade_policy.max_unhealthy_upgraded_instance_percent
+      pause_time_between_batches              = var.rolling_upgrade_policy.pause_time_between_batches
+    }
   }
 
   automatic_instance_repair {
@@ -278,7 +337,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "linux_vmss" {
 resource "azurerm_windows_virtual_machine_scale_set" "winsrv_vmss" {
   count                    = var.os_flavor == "windows" ? 1 : 0
   name                     = format("%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")))
-  computer_name_prefix     = format("%s%s", lower(replace(var.vm_computer_name, "/[[:^alnum:]]/", "")), count.index + 1)
+  computer_name_prefix     = var.computer_name_prefix == null && var.instances_count == 1 ? substr(var.vmscaleset_name, 0, 15) : substr(format("%s%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")), count.index + 1), 0, 15)
   resource_group_name      = data.azurerm_resource_group.rg.name
   location                 = data.azurerm_resource_group.rg.location
   overprovision            = var.overprovision
@@ -329,7 +388,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "winsrv_vmss" {
     dns_servers                   = var.dns_servers
     enable_ip_forwarding          = var.enable_ip_forwarding
     enable_accelerated_networking = var.enable_accelerated_networking
-    network_security_group_id     = azurerm_network_security_group.nsg.id
+    network_security_group_id     = var.existing_network_security_group_id == null ? azurerm_network_security_group.nsg.0.id : var.existing_network_security_group_id
 
     ip_configuration {
       name                                   = lower("ipconfig-${format("vm%s%s", lower(replace(var.vmscaleset_name, "/[[:^alnum:]]/", "")), count.index + 1)}")
@@ -499,7 +558,7 @@ resource "azurerm_monitor_diagnostic_setting" "vmmsdiag" {
 resource "azurerm_monitor_diagnostic_setting" "nsg" {
   count                      = var.log_analytics_workspace_name != null && var.storage_account_name != null ? 1 : 0
   name                       = lower("nsg-${var.vmscaleset_name}-diag")
-  target_resource_id         = azurerm_network_security_group.nsg.id
+  target_resource_id         = azurerm_network_security_group.nsg.0.id # need modification as per new alignment 
   storage_account_id         = var.storage_account_name != null ? data.azurerm_storage_account.storeacc.0.id : null
   log_analytics_workspace_id = data.azurerm_log_analytics_workspace.logws.0.id
 
