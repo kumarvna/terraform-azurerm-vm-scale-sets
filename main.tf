@@ -271,6 +271,13 @@ resource "azurerm_linux_virtual_machine_scale_set" "linux_vmss" {
     write_accelerator_enabled = var.enable_os_disk_write_accelerator
   }
 
+  dynamic "additional_capabilities" {
+    for_each = var.enable_ultra_ssd_data_disk_storage_support ? [1] : []
+    content {
+      ultra_ssd_enabled = var.enable_ultra_ssd_data_disk_storage_support
+    }
+  }
+
   dynamic "data_disk" {
     for_each = var.additional_data_disks
     content {
@@ -330,6 +337,14 @@ resource "azurerm_linux_virtual_machine_scale_set" "linux_vmss" {
     content {
       enabled      = var.enable_automatic_instance_repair
       grace_period = var.grace_period
+    }
+  }
+
+  dynamic "identity" {
+    for_each = var.managed_identity_type != null ? [1] : []
+    content {
+      type         = var.managed_identity_type
+      identity_ids = var.managed_identity_type == "UserAssigned" || var.managed_identity_type == "SystemAssigned, UserAssigned" ? var.managed_identity_ids : null
     }
   }
 

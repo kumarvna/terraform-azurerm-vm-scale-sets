@@ -356,6 +356,11 @@ variable "enable_os_disk_write_accelerator" {
   default     = false
 }
 
+variable "enable_ultra_ssd_data_disk_storage_support" {
+  description = "Should the capacity to enable Data Disks of the UltraSSD_LRS storage account type be supported on this Virtual Machine"
+  default     = false
+}
+
 variable "additional_data_disks" {
   description = "Adding additional disks capacity to add each instance (GB)"
   type        = list(number)
@@ -408,7 +413,15 @@ variable "enable_automatic_instance_repair" {
   default     = false
 }
 
+variable "managed_identity_type" {
+  description = "The type of Managed Identity which should be assigned to the Linux Virtual Machine Scale Set. Possible values are `SystemAssigned`, `UserAssigned` and `SystemAssigned, UserAssigned`"
+  default     = null
+}
 
+variable "managed_identity_ids" {
+  description = " A list of User Managed Identity ID's which should be assigned to the Linux Virtual Machine Scale Set."
+  default     = null
+}
 
 variable "enable_boot_diagnostics" {
   description = "Should the boot diagnostics enabled?"
