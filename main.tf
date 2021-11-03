@@ -325,9 +325,25 @@ resource "azurerm_linux_virtual_machine_scale_set" "linux_vmss" {
     }
   }
 
-  automatic_instance_repair {
-    enabled      = var.enable_automatic_instance_repair
-    grace_period = var.grace_period
+  dynamic "automatic_instance_repair" {
+    for_each = var.enable_automatic_instance_repair ? [1] : []
+    content {
+      enabled      = var.enable_automatic_instance_repair
+      grace_period = var.grace_period
+    }
+  }
+
+  dynamic "boot_diagnostics" {
+    for_each = var.enable_boot_diagnostics ? [1] : []
+    content {
+      storage_account_uri = var.storage_account_name != null ? data.azurerm_storage_account.storeacc.0.primary_blob_endpoint : var.storage_account_uri
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      tags,
+    ]
   }
 
   # As per the recomendation by Terraform documentation

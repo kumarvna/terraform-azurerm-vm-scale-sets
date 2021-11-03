@@ -403,6 +403,26 @@ variable "rolling_upgrade_policy" {
   }
 }
 
+variable "enable_automatic_instance_repair" {
+  description = "Should the automatic instance repair be enabled on this Virtual Machine Scale Set?"
+  default     = false
+}
+
+
+
+variable "enable_boot_diagnostics" {
+  description = "Should the boot diagnostics enabled?"
+  default     = false
+}
+
+variable "storage_account_uri" {
+  description = "The Primary/Secondary Endpoint for the Azure Storage Account which should be used to store Boot Diagnostics, including Console Output and Screenshots from the Hypervisor. Passing a `null` value will utilize a Managed Storage Account to store Boot Diagnostics."
+  default     = null
+}
+
+
+
+
 variable "license_type" {
   description = "Specifies the type of on-premise license which should be used for this Virtual Machine. Possible values are None, Windows_Client and Windows_Server."
   default     = "None"
@@ -410,10 +430,7 @@ variable "license_type" {
 
 
 
-variable "enable_automatic_instance_repair" {
-  description = "Should the automatic instance repair be enabled on this Virtual Machine Scale Set?"
-  default     = false
-}
+
 
 variable "grace_period" {
   description = "Amount of time (in minutes, between 30 and 90, defaults to 30 minutes) for which automatic repairs will be delayed."
