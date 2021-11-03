@@ -307,9 +307,12 @@ resource "azurerm_linux_virtual_machine_scale_set" "linux_vmss" {
     }
   }
 
-  automatic_os_upgrade_policy {
-    disable_automatic_rollback  = true
-    enable_automatic_os_upgrade = true
+  dynamic "automatic_os_upgrade_policy" {
+    for_each = var.os_upgrade_mode == "Automatic" ? [1] : []
+    content {
+      disable_automatic_rollback  = true
+      enable_automatic_os_upgrade = true
+    }
   }
 
   dynamic "rolling_upgrade_policy" {
