@@ -358,7 +358,6 @@ resource "azurerm_linux_virtual_machine_scale_set" "linux_vmss" {
   lifecycle {
     ignore_changes = [
       tags,
-      ip_tag,
     ]
   }
 
@@ -452,16 +451,22 @@ resource "azurerm_windows_virtual_machine_scale_set" "winsrv_vmss" {
     }
   }
 
-  automatic_os_upgrade_policy {
-    disable_automatic_rollback  = true
-    enable_automatic_os_upgrade = true
+  dynamic "automatic_os_upgrade_policy" {
+    for_each = var.os_upgrade_mode == "Automatic" ? [1] : []
+    content {
+      disable_automatic_rollback  = true
+      enable_automatic_os_upgrade = true
+    }
   }
 
-  rolling_upgrade_policy {
-    max_batch_instance_percent              = 20
-    max_unhealthy_instance_percent          = 20
-    max_unhealthy_upgraded_instance_percent = 5
-    pause_time_between_batches              = "PT0S"
+  dynamic "rolling_upgrade_policy" {
+    for_each = var.os_upgrade_mode == "Automatic" ? [1] : []
+    content {
+      max_batch_instance_percent              = var.rolling_upgrade_policy.max_batch_instance_percent
+      max_unhealthy_instance_percent          = var.rolling_upgrade_policy.max_unhealthy_instance_percent
+      max_unhealthy_upgraded_instance_percent = var.rolling_upgrade_policy.max_unhealthy_upgraded_instance_percent
+      pause_time_between_batches              = var.rolling_upgrade_policy.pause_time_between_batches
+    }
   }
 
   automatic_instance_repair {

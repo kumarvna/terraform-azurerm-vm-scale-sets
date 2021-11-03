@@ -73,6 +73,16 @@ variable "lb_availability_zone" {
   default     = "Zone-Redundant"
 }
 
+variable "private_ip_address_allocation" {
+  description = "The allocation method for the Private IP Address used by this Load Balancer. Possible values as Dynamic and Static."
+  default     = "Dynamic"
+}
+
+variable "lb_private_ip_address" {
+  description = "Private IP Address to assign to the Load Balancer."
+  default     = null
+}
+
 variable "lb_probe_protocol" {
   description = "Specifies the protocol of the end point. Possible values are `Http`, `Https` or `Tcp`. If `Tcp` is specified, a received ACK is required for the probe to be successful. If `Http` is specified, a `200 OK` response from the specified `URI` is required for the probe to be successful."
   default     = null
@@ -220,6 +230,11 @@ variable "os_upgrade_mode" {
   default     = "Automatic"
 }
 
+variable "vm_time_zone" {
+  description = "Specifies the Time Zone which should be used by the Virtual Machine"
+  default     = null
+}
+
 variable "availability_zones" {
   description = "A list of Availability Zones in which the Virtual Machines in this Scale Set should be created in"
   default     = [1, 2, 3]
@@ -232,12 +247,12 @@ variable "availability_zone_balance" {
 
 variable "generate_admin_ssh_key" {
   description = "Generates a secure private key and encodes it as PEM."
-  default     = true
+  default     = false
 }
 
 variable "admin_ssh_key_data" {
   description = "specify the path to the existing ssh key to authenciate linux vm"
-  default     = ""
+  default     = null
 }
 
 variable "custom_image" {
@@ -469,15 +484,7 @@ variable "grace_period" {
 
 
 
-variable "private_ip_address_allocation" {
-  description = "The allocation method for the Private IP Address used by this Load Balancer. Possible values as Dynamic and Static."
-  default     = "Dynamic"
-}
 
-variable "lb_private_ip_address" {
-  description = "Private IP Address to assign to the Load Balancer."
-  default     = null
-}
 
 
 
@@ -533,11 +540,6 @@ variable "lb_diag_logs" {
 variable "intall_iis_server_on_instances" {
   description = "Install ISS server on every Instance in the VM scale set"
   default     = false
-}
-
-variable "vm_time_zone" {
-  description = "Specifies the Time Zone which should be used by the Virtual Machine"
-  default     = null
 }
 
 variable "deploy_log_analytics_agent" {
