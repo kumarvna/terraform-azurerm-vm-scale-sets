@@ -415,6 +415,13 @@ resource "azurerm_windows_virtual_machine_scale_set" "winsrv_vmss" {
     write_accelerator_enabled = var.enable_os_disk_write_accelerator
   }
 
+  dynamic "additional_capabilities" {
+    for_each = var.enable_ultra_ssd_data_disk_storage_support ? [1] : []
+    content {
+      ultra_ssd_enabled = var.enable_ultra_ssd_data_disk_storage_support
+    }
+  }
+
   dynamic "data_disk" {
     for_each = var.additional_data_disks
     content {
@@ -469,9 +476,27 @@ resource "azurerm_windows_virtual_machine_scale_set" "winsrv_vmss" {
     }
   }
 
-  automatic_instance_repair {
-    enabled      = var.enable_automatic_instance_repair
-    grace_period = var.grace_period
+  dynamic "automatic_instance_repair" {
+    for_each = var.enable_automatic_instance_repair ? [1] : []
+    content {
+      enabled      = var.enable_automatic_instance_repair
+      grace_period = var.grace_period
+    }
+  }
+
+  dynamic "identity" {
+    for_each = var.managed_identity_type != null ? [1] : []
+    content {
+      type         = var.managed_identity_type
+      identity_ids = var.managed_identity_type == "UserAssigned" || var.managed_identity_type == "SystemAssigned, UserAssigned" ? var.managed_identity_ids : null
+    }
+  }
+
+  dynamic "boot_diagnostics" {
+    for_each = var.enable_boot_diagnostics ? [1] : []
+    content {
+      storage_account_uri = var.storage_account_name != null ? data.azurerm_storage_account.storeacc.0.primary_blob_endpoint : var.storage_account_uri
+    }
   }
 
   # As per the recomendation by Terraform documentation
