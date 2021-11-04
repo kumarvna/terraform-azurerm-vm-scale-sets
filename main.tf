@@ -36,12 +36,6 @@ data "azurerm_subnet" "snet" {
   resource_group_name  = data.azurerm_resource_group.rg.name
 }
 
-data "azurerm_log_analytics_workspace" "logws" {
-  count               = var.log_analytics_workspace_name != null ? 1 : 0
-  name                = var.log_analytics_workspace_name
-  resource_group_name = data.azurerm_resource_group.rg.name
-}
-
 data "azurerm_storage_account" "storeacc" {
   count               = var.storage_account_name != null ? 1 : 0
   name                = var.storage_account_name
@@ -323,7 +317,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "linux_vmss" {
   }
 
   dynamic "rolling_upgrade_policy" {
-    for_each = var.os_upgrade_mode == "Automatic" ? [1] : []
+    for_each = var.os_upgrade_mode != "Manual" ? [1] : []
     content {
       max_batch_instance_percent              = var.rolling_upgrade_policy.max_batch_instance_percent
       max_unhealthy_instance_percent          = var.rolling_upgrade_policy.max_unhealthy_instance_percent
@@ -467,7 +461,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "winsrv_vmss" {
   }
 
   dynamic "rolling_upgrade_policy" {
-    for_each = var.os_upgrade_mode == "Automatic" ? [1] : []
+    for_each = var.os_upgrade_mode != "Manual" ? [1] : []
     content {
       max_batch_instance_percent              = var.rolling_upgrade_policy.max_batch_instance_percent
       max_unhealthy_instance_percent          = var.rolling_upgrade_policy.max_unhealthy_instance_percent
@@ -581,7 +575,7 @@ resource "azurerm_monitor_autoscale_setting" "auto" {
 # Azure Log Analytics Workspace Agent Installation for windows
 #--------------------------------------------------------------
 resource "azurerm_virtual_machine_scale_set_extension" "omsagentwin" {
-  count                        = var.deploy_log_analytics_agent && var.log_analytics_workspace_name != null && var.os_flavor == "windows" ? 1 : 0
+  count                        = var.deploy_log_analytics_agent && var.log_analytics_workspace_id != null && var.os_flavor == "windows" ? 1 : 0
   name                         = "OmsAgentForWindows"
   publisher                    = "Microsoft.EnterpriseCloud.Monitoring"
   type                         = "MicrosoftMonitoringAgent"
@@ -591,13 +585,13 @@ resource "azurerm_virtual_machine_scale_set_extension" "omsagentwin" {
 
   settings = <<SETTINGS
     {
-      "workspaceId": "${data.azurerm_log_analytics_workspace.logws.0.workspace_id}"
+      "workspaceId": "${var.log_analytics_customer_id}"
     }
   SETTINGS
 
   protected_settings = <<PROTECTED_SETTINGS
     {
-    "workspaceKey": "${data.azurerm_log_analytics_workspace.logws.0.primary_shared_key}"
+    "workspaceKey": "${var.log_analytics_workspace_primary_shared_key}"
     }
   PROTECTED_SETTINGS
 }
@@ -606,7 +600,7 @@ resource "azurerm_virtual_machine_scale_set_extension" "omsagentwin" {
 # Azure Log Analytics Workspace Agent Installation for Linux
 #--------------------------------------------------------------
 resource "azurerm_virtual_machine_scale_set_extension" "omsagentlinux" {
-  count                        = var.deploy_log_analytics_agent && var.log_analytics_workspace_name != null && var.os_flavor == "linux" ? 1 : 0
+  count                        = var.deploy_log_analytics_agent && var.log_analytics_workspace_id != null && var.os_flavor == "linux" ? 1 : 0
   name                         = "OmsAgentForLinux"
   publisher                    = "Microsoft.EnterpriseCloud.Monitoring"
   type                         = "OmsAgentForLinux"
@@ -616,13 +610,13 @@ resource "azurerm_virtual_machine_scale_set_extension" "omsagentlinux" {
 
   settings = <<SETTINGS
     {
-      "workspaceId": "${data.azurerm_log_analytics_workspace.logws.0.workspace_id}"
+      "workspaceId": "${var.log_analytics_customer_id}"
     }
   SETTINGS
 
   protected_settings = <<PROTECTED_SETTINGS
     {
-    "workspaceKey": "${data.azurerm_log_analytics_workspace.logws.0.primary_shared_key}"
+    "workspaceKey": "${var.log_analytics_workspace_primary_shared_key}"
     }
   PROTECTED_SETTINGS
 }
@@ -631,11 +625,10 @@ resource "azurerm_virtual_machine_scale_set_extension" "omsagentlinux" {
 # azurerm monitoring diagnostics 
 #--------------------------------------
 resource "azurerm_monitor_diagnostic_setting" "vmmsdiag" {
-  count                      = var.log_analytics_workspace_name != null && var.storage_account_name != null ? 1 : 0
+  count                      = var.log_analytics_workspace_id != null ? 1 : 0
   name                       = lower("${var.vmscaleset_name}-diag")
   target_resource_id         = var.os_flavor == "windows" ? azurerm_windows_virtual_machine_scale_set.winsrv_vmss.0.id : azurerm_linux_virtual_machine_scale_set.linux_vmss.0.id
-  storage_account_id         = var.storage_account_name != null ? data.azurerm_storage_account.storeacc.0.id : null
-  log_analytics_workspace_id = data.azurerm_log_analytics_workspace.logws.0.id
+  log_analytics_workspace_id = var.log_analytics_workspace_id
 
   metric {
     category = "AllMetrics"
@@ -647,11 +640,10 @@ resource "azurerm_monitor_diagnostic_setting" "vmmsdiag" {
 }
 
 resource "azurerm_monitor_diagnostic_setting" "nsg" {
-  count                      = var.log_analytics_workspace_name != null && var.storage_account_name != null ? 1 : 0
+  count                      = var.existing_network_security_group_id == null && var.log_analytics_workspace_id != null ? 1 : 0
   name                       = lower("nsg-${var.vmscaleset_name}-diag")
-  target_resource_id         = azurerm_network_security_group.nsg.0.id # need modification as per new alignment 
-  storage_account_id         = var.storage_account_name != null ? data.azurerm_storage_account.storeacc.0.id : null
-  log_analytics_workspace_id = data.azurerm_log_analytics_workspace.logws.0.id
+  target_resource_id         = azurerm_network_security_group.nsg.0.id
+  log_analytics_workspace_id = var.log_analytics_workspace_id
 
   dynamic "log" {
     for_each = var.nsg_diag_logs
@@ -667,11 +659,10 @@ resource "azurerm_monitor_diagnostic_setting" "nsg" {
 }
 
 resource "azurerm_monitor_diagnostic_setting" "lb-pip" {
-  count                      = var.load_balancer_type == "public" && var.log_analytics_workspace_name != null && var.storage_account_name != null ? 1 : 0
+  count                      = var.load_balancer_type == "public" && var.log_analytics_workspace_id != null ? 1 : 0
   name                       = "${var.vmscaleset_name}-pip-diag"
   target_resource_id         = azurerm_public_ip.pip.0.id
-  storage_account_id         = data.azurerm_storage_account.storeacc.0.id
-  log_analytics_workspace_id = data.azurerm_log_analytics_workspace.logws.0.id
+  log_analytics_workspace_id = var.log_analytics_workspace_id
 
   dynamic "log" {
     for_each = var.pip_diag_logs
@@ -695,11 +686,10 @@ resource "azurerm_monitor_diagnostic_setting" "lb-pip" {
 }
 
 resource "azurerm_monitor_diagnostic_setting" "lb" {
-  count                      = var.load_balancer_type == "public" && var.log_analytics_workspace_name != null && var.storage_account_name != null ? 1 : 0
+  count                      = var.load_balancer_type == "public" && var.log_analytics_workspace_id != null && var.storage_account_name != null ? 1 : 0
   name                       = "${var.vmscaleset_name}-lb-diag"
   target_resource_id         = azurerm_lb.vmsslb.0.id
-  storage_account_id         = data.azurerm_storage_account.storeacc.0.id
-  log_analytics_workspace_id = data.azurerm_log_analytics_workspace.logws.0.id
+  log_analytics_workspace_id = var.log_analytics_workspace_id
 
   dynamic "log" {
     for_each = var.lb_diag_logs

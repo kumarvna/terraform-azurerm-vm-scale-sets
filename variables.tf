@@ -443,6 +443,11 @@ variable "enable_automatic_instance_repair" {
   default     = false
 }
 
+variable "grace_period" {
+  description = "Amount of time (in minutes, between 30 and 90, defaults to 30 minutes) for which automatic repairs will be delayed."
+  default     = "PT30M"
+}
+
 variable "managed_identity_type" {
   description = "The type of Managed Identity which should be assigned to the Linux Virtual Machine Scale Set. Possible values are `SystemAssigned`, `UserAssigned` and `SystemAssigned, UserAssigned`"
   default     = null
@@ -481,15 +486,6 @@ variable "enable_boot_diagnostics" {
 variable "storage_account_uri" {
   description = "The Primary/Secondary Endpoint for the Azure Storage Account which should be used to store Boot Diagnostics, including Console Output and Screenshots from the Hypervisor. Passing a `null` value will utilize a Managed Storage Account to store Boot Diagnostics."
   default     = null
-}
-
-
-
-
-
-variable "grace_period" {
-  description = "Amount of time (in minutes, between 30 and 90, defaults to 30 minutes) for which automatic repairs will be delayed."
-  default     = "PT30M"
 }
 
 variable "enable_autoscale_for_vmss" {
@@ -537,13 +533,28 @@ variable "lb_diag_logs" {
   default     = ["LoadBalancerAlertEvent"]
 }
 
-variable "intall_iis_server_on_instances" {
-  description = "Install ISS server on every Instance in the VM scale set"
+variable "deploy_log_analytics_agent" {
+  description = "Install log analytics agent to windows or linux VM scaleset instances"
   default     = false
 }
 
-variable "deploy_log_analytics_agent" {
-  description = "Install log analytics agent to windows or linux VM scaleset instances"
+variable "log_analytics_workspace_id" {
+  description = "The name of log analytics workspace resource id"
+  default     = null
+}
+
+variable "log_analytics_customer_id" {
+  description = "The Workspace (or Customer) ID for the Log Analytics Workspace."
+  default     = null
+}
+
+variable "log_analytics_workspace_primary_shared_key" {
+  description = "The Primary shared key for the Log Analytics Workspace"
+  default     = null
+}
+
+variable "intall_iis_server_on_instances" {
+  description = "Install ISS server on every Instance in the VM scale set"
   default     = false
 }
 
