@@ -4,15 +4,20 @@ This module deploys Windows or Linux virtual machine scale sets with Public / Pr
 
 ## Module Usage
 
-```hcl
+```terraform
 # Azurerm provider configuration
 provider "azurerm" {
   features {}
 }
 
+data "azurerm_log_analytics_workspace" "example" {
+  name                = "loganalytics-we-sharedtest2"
+  resource_group_name = "rg-shared-westeurope-01"
+}
+
 module "vmscaleset" {
   source  = "kumarvna/vm-scale-sets/azurerm"
-  version = "2.2.0"
+  version = "2.3.0"
 
   # Resource Group and location, VNet and Subnet detials (Required)
   resource_group_name  = "rg-shared-westeurope-01"
@@ -20,25 +25,25 @@ module "vmscaleset" {
   subnet_name          = "snet-management"
   vmscaleset_name      = "testvmss"
 
-  # (Optional) To enable Azure Monitoring and install log analytics agents
-  # (Optional) Specify `storage_account_name` to save monitoring logs to storage.   
-  log_analytics_workspace_name = var.log_analytics_workspace_name
-
-  # Deploy log analytics agents to virtual machine. Log analytics workspace name required.
-  # Defaults to `false` 
-  deploy_log_analytics_agent = false
-
   # This module support multiple Pre-Defined Linux and Windows Distributions.
-  # These distributions support the Automatic OS image upgrades in virtual machine scale sets
-  # Linux images: ubuntu1804, ubuntu1604, centos75, coreos
-  # Windows Images: windows2012r2dc, windows2016dc, windows2019dc, windows2016dccore
-  # Specify the RSA key for production workloads and set generate_admin_ssh_key argument to false
-  # When you use Autoscaling feature, instances_count will become default and minimum instance count. 
+  # Check the README.md file for more pre-defined images for Ubuntu, Centos, RedHat.
+  # Please make sure to use gen2 images supported VM sizes if you use gen2 distributions
+  # Specify `disable_password_authentication = false` to create random admin password
+  # Specify a valid password with `admin_password` argument to use your own password 
+  # To generate SSH key pair, specify `generate_admin_ssh_key = true`
+  # To use existing key pair, specify `admin_ssh_key_data` to a valid SSH public key path.  
   os_flavor               = "linux"
   linux_distribution_name = "ubuntu1804"
-  generate_admin_ssh_key  = false
-  admin_ssh_key_data      = "~/.ssh/id_rsa.pub"
+  virtual_machine_size    = "Standard_A2_v2"
+  admin_username          = "azureadmin"
+  generate_admin_ssh_key  = true
   instances_count         = 2
+
+  # Proxymity placement group, Automatic Instance repair and adding Public IP to VM's are optional.
+  # remove these argument from module if you dont want to use it.  
+  enable_proximity_placement_group    = true
+  assign_public_ip_to_each_vm_in_vmss = true
+  enable_automatic_instance_repair    = true
 
   # Public and private load balancer support for VM scale sets
   # Specify health probe port to allow LB to detect the backend endpoint status
@@ -59,10 +64,14 @@ module "vmscaleset" {
   scale_out_cpu_percentage_threshold = 80
   scale_in_cpu_percentage_threshold  = 20
 
+  # Boot diagnostics to troubleshoot virtual machines, by default uses managed 
+  # To use custom storage account, specify `storage_account_name` with a valid name
+  # Passing a `null` value will utilize a Managed Storage Account to store Boot Diagnostics
+  enable_boot_diagnostics = true
+
   # Network Seurity group port allow definitions for each Virtual Machine
   # NSG association to be added automatically for all network interfaces.
-  # SSH port 22 and 3389 is exposed to the Internet recommended for only testing. 
-  # For production environments, we recommend using a VPN or private connection
+  # Remove this NSG rules block, if `existing_network_security_group_id` is specified
   nsg_inbound_rules = [
     {
       name                   = "http"
@@ -77,10 +86,19 @@ module "vmscaleset" {
     },
   ]
 
-  # Adding TAG's to your Azure resources (Required)
-  # ProjectName and Env are already declared above, to use them here, create a varible. 
+  # (Optional) To enable Azure Monitoring and install log analytics agents
+  # (Optional) Specify `storage_account_name` to save monitoring logs to storage.   
+  log_analytics_workspace_id = data.azurerm_log_analytics_workspace.example.id
+
+  # Deploy log analytics agents to virtual machine. 
+  # Log analytics workspace customer id and primary shared key required.
+  deploy_log_analytics_agent                 = true
+  log_analytics_customer_id                  = data.azurerm_log_analytics_workspace.example.workspace_id
+  log_analytics_workspace_primary_shared_key = data.azurerm_log_analytics_workspace.example.primary_shared_key
+
+  # Adding additional TAG's to your Azure resources
   tags = {
-    ProjectName  = "demo-internal"
+    ProjectName  = "demo-project"
     Env          = "dev"
     Owner        = "user@example.com"
     BusinessUnit = "CORP"
@@ -100,23 +118,3 @@ terraform apply
 ```
 
 Run `terraform destroy` when you don't need these resources.
-
-## Outputs
-
-|Name | Description|
-|---- | -----------|
-`admin_ssh_key_public`|The generated public key data in PEM format
-`admin_ssh_key_private`|The generated private key data in PEM format
-`windows_vm_password`|Password for the windows Virtual Machine
-`load_balancer_public_ip`|The Public IP address allocated for load balancer
-`load_balancer_private_ip`|The Private IP address allocated for load balancer
-`load_balancer_nat_pool_id`|The resource ID of the Load Balancer NAT pool
-`load_balancer_health_probe_id`|The resource ID of the Load Balancer health Probe
-`load_balancer_rules_id`|The resource ID of the Load Balancer Rule
-`network_security_group_id`|The resource id of Network security group
-`linux_virtual_machine_scale_set_name`|The name of the Linux Virtual Machine Scale Set
-`linux_virtual_machine_scale_set_id`|The resource ID of the Linux Virtual Machine Scale Set
-`linux_virtual_machine_scale_set_unique_id`|The unique ID of the Linux Virtual Machine Scale Set
-`windows_virtual_machine_scale_set_name`|The name of the windows Virtual Machine Scale Set
-`windows_virtual_machine_scale_set_id`|The resource ID of the windows Virtual Machine Scale Set
-`windows_virtual_machine_scale_set_unique_id`|The unique ID of the windows Virtual Machine Scale Set
