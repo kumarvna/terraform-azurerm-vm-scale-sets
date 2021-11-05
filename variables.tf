@@ -67,12 +67,6 @@ variable "load_balancer_sku" {
   description = "The SKU of the Azure Load Balancer. Accepted values are Basic and Standard."
   default     = "Standard"
 }
-
-variable "lb_availability_zone" {
-  description = "A list of Availability Zones which the Load Balancer's IP Addresses should be created in. Possible values are `Zone-Redundant`, `1`, `2`, `3`, and `No-Zone`. Availability Zone can only be updated whenever the name of the front end ip configuration changes"
-  default     = "Zone-Redundant"
-}
-
 variable "private_ip_address_allocation" {
   description = "The allocation method for the Private IP Address used by this Load Balancer. Possible values as Dynamic and Static."
   default     = "Dynamic"
@@ -237,12 +231,12 @@ variable "vm_time_zone" {
 
 variable "availability_zones" {
   description = "A list of Availability Zones in which the Virtual Machines in this Scale Set should be created in"
-  default     = [1, 2, 3]
+  default     = null #[1, 2, 3]
 }
 
 variable "availability_zone_balance" {
   description = "Should the Virtual Machines in this Scale Set be strictly evenly distributed across Availability Zones?"
-  default     = true
+  default     = false
 }
 
 variable "generate_admin_ssh_key" {

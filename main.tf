@@ -67,8 +67,8 @@ resource "azurerm_public_ip" "pip" {
   sku                 = var.public_ip_sku
   sku_tier            = var.public_ip_sku_tier
   domain_name_label   = var.domain_name_label
-  availability_zone   = var.public_ip_availability_zone
-  tags                = merge({ "resourcename" = lower("pip-vm-${var.vmscaleset_name}-${data.azurerm_resource_group.rg.location}-0${count.index + 1}") }, var.tags, )
+  # availability_zone   = var.public_ip_availability_zone
+  tags = merge({ "resourcename" = lower("pip-vm-${var.vmscaleset_name}-${data.azurerm_resource_group.rg.location}-0${count.index + 1}") }, var.tags, )
 
   lifecycle {
     ignore_changes = [
@@ -90,7 +90,6 @@ resource "azurerm_lb" "vmsslb" {
 
   frontend_ip_configuration {
     name                          = var.load_balancer_type == "public" ? lower("lbext-frontend-${var.vmscaleset_name}") : lower("lbint-frontend-${var.vmscaleset_name}")
-    availability_zone             = var.lb_availability_zone
     public_ip_address_id          = var.enable_load_balancer == true && var.load_balancer_type == "public" ? azurerm_public_ip.pip[count.index].id : null
     private_ip_address_allocation = var.load_balancer_type == "private" ? var.private_ip_address_allocation : null
     private_ip_address            = var.load_balancer_type == "private" && var.private_ip_address_allocation == "Static" ? var.lb_private_ip_address : null
@@ -352,6 +351,11 @@ resource "azurerm_linux_virtual_machine_scale_set" "linux_vmss" {
   lifecycle {
     ignore_changes = [
       tags,
+      automatic_instance_repair,
+      automatic_os_upgrade_policy,
+      rolling_upgrade_policy,
+      instances,
+      data_disk,
     ]
   }
 
@@ -375,7 +379,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "winsrv_vmss" {
   custom_data                                       = var.custom_data
   overprovision                                     = var.overprovision
   do_not_run_extensions_on_overprovisioned_machines = var.do_not_run_extensions_on_overprovisioned_machines
-  enable_automatic_updates                          = var.enable_windows_vm_automatic_updates
+  enable_automatic_updates                          = var.os_upgrade_mode != "Automatic" ? var.enable_windows_vm_automatic_updates : false
   encryption_at_host_enabled                        = var.enable_encryption_at_host
   health_probe_id                                   = var.enable_load_balancer ? azurerm_lb_probe.lbp[0].id : null
   license_type                                      = var.license_type
@@ -509,6 +513,18 @@ resource "azurerm_windows_virtual_machine_scale_set" "winsrv_vmss" {
     }
   }
 
+  lifecycle {
+    ignore_changes = [
+      tags,
+      automatic_instance_repair,
+      automatic_os_upgrade_policy,
+      rolling_upgrade_policy,
+      instances,
+      winrm_listener,
+      additional_unattend_content,
+      data_disk,
+    ]
+  }
   # As per the recomendation by Terraform documentation
   depends_on = [azurerm_lb_rule.lbrule]
 }
