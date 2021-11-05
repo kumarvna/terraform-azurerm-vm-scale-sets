@@ -72,6 +72,7 @@ resource "azurerm_public_ip" "pip" {
   lifecycle {
     ignore_changes = [
       tags,
+      ip_tags,
     ]
   }
 }
@@ -374,7 +375,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "winsrv_vmss" {
   sku                                               = var.virtual_machine_size
   instances                                         = var.instances_count
   admin_username                                    = var.admin_username
-  admin_password                                    = var.admin_password == null ? random_password.passwd[count.index].result : var.admin_password
+  admin_password                                    = var.admin_password == null ? element(concat(random_password.passwd.*.result, [""]), 0) : var.admin_password
   custom_data                                       = var.custom_data
   overprovision                                     = var.overprovision
   do_not_run_extensions_on_overprovisioned_machines = var.do_not_run_extensions_on_overprovisioned_machines
