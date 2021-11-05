@@ -13,11 +13,6 @@ variable "subnet_name" {
   default     = ""
 }
 
-variable "log_analytics_workspace_name" {
-  description = "The name of log analytics workspace name"
-  default     = null
-}
-
 variable "storage_account_name" {
   description = "The name of the hub storage account to store logs"
   default     = null
@@ -43,11 +38,6 @@ variable "domain_name_label" {
   default     = null
 }
 
-variable "public_ip_availability_zone" {
-  description = "The availability zone to allocate the Public IP in. Possible values are `Zone-Redundant`, `1`,`2`, `3`, and `No-Zone`"
-  default     = "Zone-Redundant"
-}
-
 variable "public_ip_sku_tier" {
   description = "The SKU Tier that should be used for the Public IP. Possible values are `Regional` and `Global`"
   default     = "Regional"
@@ -67,7 +57,7 @@ variable "load_balancer_sku" {
   description = "The SKU of the Azure Load Balancer. Accepted values are Basic and Standard."
   default     = "Standard"
 }
-variable "private_ip_address_allocation" {
+variable "private_ip_address_allocation_type" {
   description = "The allocation method for the Private IP Address used by this Load Balancer. Possible values as Dynamic and Static."
   default     = "Dynamic"
 }
@@ -88,7 +78,7 @@ variable "lb_probe_request_path" {
 }
 
 variable "number_of_probes" {
-  description = " The number of failed probe attempts after which the backend endpoint is removed from rotation. The default value is `2`. `NumberOfProbes` multiplied by `intervalInSeconds` value must be greater or equal to 10.Endpoints are returned to rotation when at least one probe is successful."
+  description = "The number of failed probe attempts after which the backend endpoint is removed from rotation. The default value is `2`. `NumberOfProbes` multiplied by `intervalInSeconds` value must be greater or equal to 10.Endpoints are returned to rotation when at least one probe is successful."
   default     = null
 }
 
@@ -151,7 +141,7 @@ variable "virtual_machine_size" {
 
 variable "instances_count" {
   description = "The number of Virtual Machines in the Scale Set."
-  default     = 1
+  default     = 2
 }
 
 variable "admin_username" {

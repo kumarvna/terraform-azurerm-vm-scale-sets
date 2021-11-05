@@ -67,8 +67,7 @@ resource "azurerm_public_ip" "pip" {
   sku                 = var.public_ip_sku
   sku_tier            = var.public_ip_sku_tier
   domain_name_label   = var.domain_name_label
-  # availability_zone   = var.public_ip_availability_zone
-  tags = merge({ "resourcename" = lower("pip-vm-${var.vmscaleset_name}-${data.azurerm_resource_group.rg.location}-0${count.index + 1}") }, var.tags, )
+  tags                = merge({ "resourcename" = lower("pip-vm-${var.vmscaleset_name}-${data.azurerm_resource_group.rg.location}-0${count.index + 1}") }, var.tags, )
 
   lifecycle {
     ignore_changes = [
@@ -91,8 +90,8 @@ resource "azurerm_lb" "vmsslb" {
   frontend_ip_configuration {
     name                          = var.load_balancer_type == "public" ? lower("lbext-frontend-${var.vmscaleset_name}") : lower("lbint-frontend-${var.vmscaleset_name}")
     public_ip_address_id          = var.enable_load_balancer == true && var.load_balancer_type == "public" ? azurerm_public_ip.pip[count.index].id : null
-    private_ip_address_allocation = var.load_balancer_type == "private" ? var.private_ip_address_allocation : null
-    private_ip_address            = var.load_balancer_type == "private" && var.private_ip_address_allocation == "Static" ? var.lb_private_ip_address : null
+    private_ip_address_allocation = var.load_balancer_type == "private" ? var.private_ip_address_allocation_type : null
+    private_ip_address            = var.load_balancer_type == "private" && var.private_ip_address_allocation_type == "Static" ? var.lb_private_ip_address : null
     subnet_id                     = var.load_balancer_type == "private" ? data.azurerm_subnet.snet.id : null
   }
 
